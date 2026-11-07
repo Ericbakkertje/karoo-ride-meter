@@ -1,17 +1,17 @@
-# Karoo Ride Meter — testversie 1.1.1
+# Karoo Ride Meter — testversie 1.1.2
 
 Een grafisch dataveld voor de Hammerhead Karoo 3: snelheid op een wijzerplaat met cijfers,
 versnelling en accu van de elektronische schakeling (SRAM AXS, of Shimano Di2 via Ki2),
 afstand of gemiddelde snelheid, en drie ronde velden naar keuze.
 
-Bestand: `KarooRideMeter-1.1.1.apk`
-SHA-256: `881bd270c744faa552d8cca89cadcdf3d3e239cfe3ca97dc7d5dc2add8aa9082`
+Bestand: `KarooRideMeter-1.1.2.apk`
+SHA-256: `ba5bae9be36d07d54f4969212e1dc8a8a0785152fdc2a7cfd6a012a22e2b2199`
 
 ## Installeren
 
 **Met een computer (adb):**
 1. Zet op de Karoo ontwikkelaarsopties en USB-debugging aan, en sluit hem aan.
-2. `adb install KarooRideMeter-1.1.1.apk`
+2. `adb install KarooRideMeter-1.1.2.apk`
 
 **Zonder computer:** dit zou moeten kunnen door de downloadlink van de APK te delen met de
 Hammerhead-app op je telefoon, die hem dan op de Karoo zet (nog niet door ons getest).

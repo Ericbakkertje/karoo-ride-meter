@@ -1,12 +1,12 @@
 # Karoo Ride Meter — Project Status
 
-_Last updated: 2026-11-07 — 1.1.1: average speed under the speed with two decimals (1.1.0: status row, distance / average speed choice) (branch `feature/gear-top-row`)._
+_Last updated: 2026-11-07 — 1.1.2: full-page layout moved up (release build on main, installed)._
 
 ## Version
 
 | | |
 |---|---|
-| App version | **1.1.1** (`versionCode 4`) |
+| App version | **1.1.2** (`versionCode 5`) |
 | Application ID | `com.karooridemeter` |
 | Extension ID | `karoo-ride-meter` (field typeId `ride-meter`) |
 | Hammerhead SDK | `io.hammerhead:karoo-ext:1.1.9` |
@@ -84,7 +84,15 @@ Because the extension id changed, a Ride Meter field placed on a page with the G
   mostly on the 15/13/17.
 
 
-## Release APK for testers (1.1.1)
+## Release APK for testers (1.1.2)
+
+`dist/KarooRideMeter-1.1.2.apk` · 2,925,633 bytes · SHA-256 `ba5bae9be36d07d54f4969212e1dc8a8a0785152fdc2a7cfd6a012a22e2b2199`
+(release key, same certificate as 1.1.1). **Installed on the developer's Karoo 2026-11-07 15:49:16** over 1.1.1
+(`adb install -r`, settings kept), connected, no crash. 1.1.2 change: on full-page fields the status row starts right
+below the Karoo's ride bar (6.3 %) and the dial follows straight under it (spare height at the bottom), about 37 px
+higher than 1.1.1 — the user found the screen sat too low during the test ride.
+
+### 1.1.1 (first release)
 
 ```
 ~/Downloads/karoo-ride-meter/dist/KarooRideMeter-1.1.1.apk   (+ dist/TESTERS.md, install notes in Dutch)
