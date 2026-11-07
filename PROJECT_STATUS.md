@@ -104,8 +104,16 @@ Rendering tests use Robolectric native graphics (real `android.graphics` on the 
 ## Installation & testing status on the Karoo 3
 
 - Installed: **1.0.0**, 2026-11-07 13:58:27, together with Karoo Graphic Meter 0.9.0 (which no longer has the
-  Ride Meter). Extension connected (`KarooRideMeter: Karoo system connected: true`), no crash.
-  Field not yet re-added on a page.
+  Ride Meter). Extension connected (`KarooRideMeter: Karoo system connected: true`), no crash of this app.
+- **Seen on the device 2026-11-07 14:04** (S-Works profile, field re-added, 478×721 page): dial, pointer,
+  `Di2 70%`, `Gear 52 / 14`, round fields Cadence / HR / Power 3s (chosen by the user in Ride Meter Settings).
+  Log: Ki2 battery `70.0`, `SHIFTING_BATTERY_STATUS = 1.0`, front 52 T (2/2), rear 14 T (9/12).
+- **Watch:** at 14:02:02, while the user was editing pages, the Karoo's own ride app (`io.hammerhead.rideapp`)
+  crashed with `OutOfMemoryError` (128 MB heap limit) while reading an incoming Binder parcel (`Parcel.readStringList`
+  in a timeseries data model). It restarted by itself (14:04:21). Not shown to be caused by this app: our processes
+  kept running, and it was the only OOM in the crash log since 10:04 (that included a 2 h ride with Graphic Meter 0.7.0).
+  If it happens again, suspects are the size/rate of the graphical frames (Ride Meter frame ≈ 364×549 RGB_565
+  ≈ 400 KB, up to 2/s) and the many stream subscriptions; options: lower MAX_PIXELS or the frame rate.
 - Verified as part of Graphic Meter 0.8.0/0.8.1 on 2026-11-07: dial and round fields render (478×721 page);
   Di2 battery (`Di2 70%`) and gear (`Gear 52 / 14`) via Ki2 on the S-Works profile.
 
