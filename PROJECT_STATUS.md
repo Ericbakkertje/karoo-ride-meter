@@ -95,8 +95,10 @@ Signed (v1 + v2) with the **release key** `~/Downloads/karoo-signing/karoo-relea
 certificate SHA-256 `5a8c8cbe…415ae4`). Passwords are in `keystore.properties` (project root, git-ignored) and a
 backup copy in `~/Downloads/karoo-signing/`. **Back up that folder**: every future release must be signed with this
 key, or testers cannot update over their installed version.
-The Karoo of the developer has the **debug-signed** 1.1.1; installing the release APK there needs an uninstall first
-(different signature; Ride Meter Settings reset to defaults).
+**Installed on the developer's Karoo 2026-11-07 15:29:21** (debug build uninstalled first; on-device APK SHA-256
+matches `dist/`, not debuggable, extension connected, no crash). Settings were reset by the uninstall; before it
+they were: scale 0–90, fields Cadence / HR / Power 3s, under the speed = distance (default).
+From now on install release builds there (`adb install -r dist/...apk`); a debug build no longer installs over it.
 
 ## Latest APK
 
@@ -128,7 +130,7 @@ Rendering tests use Robolectric native graphics (real `android.graphics` on the 
 
 ## Installation & testing status on the Karoo 3
 
-- Installed: **1.1.1**, 2026-11-07 15:17:10 (connected, no crash). Before: 1.1.0, 2026-11-07 15:09:30 (extension connected, no crash). Seen on screen 15:11 (478×721, scale 0–90): status row with
+- Installed: **1.1.1 release** (signed with the release key), 2026-11-07 15:29:21. Before: 1.1.1 debug 15:17:10, 1.1.0 debug 15:09:30 (extension connected, no crash). Seen on screen 15:11 (478×721, scale 0–90): status row with
   `SHIFT --` left and `-- / --` GEAR right (shifting asleep), `-- km` under the speed, round fields; layout as in the previews.
   Before: 1.0.1, 2026-11-07 14:47:22 (after the short ride was saved; extension reconnected, no crash).
   Earlier: 1.0.0 at 13:58:27, together with Karoo Graphic Meter 0.9.0 (which no longer has the
