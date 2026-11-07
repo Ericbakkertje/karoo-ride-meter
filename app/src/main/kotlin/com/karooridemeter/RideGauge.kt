@@ -72,6 +72,41 @@ data class ShiftBattery(
     }
 }
 
+/**
+ * Picks the shifting battery to show and remembers Di2.
+ *
+ * With Ki2, the Di2 also feeds the Karoo's generic SHIFTING_BATTERY status, and Ki2's % stream can pause
+ * (seen on a ride: the field then read "AXS GOOD" on the Di2 bike). So once Ki2 reported a %, keep showing
+ * "Di2" with the last known % while any shifting battery data keeps coming. Forget it only after no battery
+ * data at all for [FORGET_AFTER_MS] while the field is on screen (e.g. after switching to the AXS bike).
+ * Gaps while the field is not on screen do not count, so a short "no data yet" at page start is harmless.
+ */
+class ShiftBatteryTracker(private val now: () -> Long = System::currentTimeMillis) {
+    private var lastDi2Pct: Double? = null
+    private var silentSince: Long? = null
+
+    @Synchronized
+    fun update(axsRaw: Double?, di2Pct: Double?): ShiftBattery? {
+        val t = now()
+        val di2 = ShiftBattery.di2(di2Pct)
+        if (di2 != null || ShiftBattery.axs(axsRaw) != null) silentSince = null
+        if (di2 != null) {
+            lastDi2Pct = di2Pct
+            return di2
+        }
+        if (axsRaw == null) {
+            val since = silentSince ?: t.also { silentSince = it }
+            if (t - since > FORGET_AFTER_MS) lastDi2Pct = null
+        }
+        lastDi2Pct?.let { return ShiftBattery.di2(it) }
+        return ShiftBattery.axs(axsRaw)
+    }
+
+    companion object {
+        const val FORGET_AFTER_MS = 2 * 60 * 1000L
+    }
+}
+
 /** What a Ride Meter box can show. Chosen per box in Settings; [label] is drawn in the box. */
 enum class RideSlotValue(val label: String, val settingsName: String) {
     SLOPE("SLOPE %", "Slope %"),

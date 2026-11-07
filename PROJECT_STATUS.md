@@ -1,12 +1,12 @@
 # Karoo Ride Meter — Project Status
 
-_Last updated: 2026-11-07 — 1.0.0: split off from Karoo Graphic Meter (where it was the Ride Meter field, 0.4.0–0.8.1)._
+_Last updated: 2026-11-07 — 1.0.1: Di2 stays "Di2" when Ki2's % stream pauses (1.0.0: split off from Karoo Graphic Meter)._
 
 ## Version
 
 | | |
 |---|---|
-| App version | **1.0.0** (`versionCode 1`) |
+| App version | **1.0.1** (`versionCode 2`) |
 | Application ID | `com.karooridemeter` |
 | Extension ID | `karoo-ride-meter` (field typeId `ride-meter`) |
 | Hammerhead SDK | `io.hammerhead:karoo-ext:1.1.9` |
@@ -78,8 +78,8 @@ Because the extension id changed, a Ride Meter field placed on a page with the G
 ```
 ~/Downloads/karoo-ride-meter/app/build/outputs/apk/debug/app-debug.apk
 ```
-Built 2026-11-07 (1.0.0) · 3,695,643 bytes ·
-SHA-256 `0544a7d979df9b89330ad002d3fa37244872af6deecb8ac62a3c32ffc102f2f8`
+Built 2026-11-07 (1.0.1) · 3,696,870 bytes ·
+SHA-256 `bea913207a66d544b2ec4f5ceb7940517f05a9596a63bf772f94e6af3fb5c57d`
 
 Build and test:
 ```bash
@@ -91,11 +91,11 @@ Requires a GitHub token with `read:packages` in `~/.gradle/gradle.properties` (`
 
 ## Tests (Mac)
 
-**18 / 18 passing** (`./gradlew testDebugUnitTest`):
+**21 / 21 passing** (`./gradlew testDebugUnitTest`):
 
 | Test class | Tests | Covers |
 |---|---|---|
-| `RideMeterTest` | 13 | Texts/colours, every field choice, AXS level mapping, AXS/Di2 battery choice and Ki2 id, tick steps, previews at 7 sizes + every battery level (PNGs in `app/build/gauge-previews/`), dial and circles inside the field, lit/dim ticks, red pointer, ring colours |
+| `RideMeterTest` | 16 | Texts/colours, Di2 memory when Ki2's % pauses (and forgetting it after 2 min of silence), every field choice, AXS level mapping, AXS/Di2 battery choice and Ki2 id, tick steps, previews at 7 sizes + every battery level (PNGs in `app/build/gauge-previews/`), dial and circles inside the field, lit/dim ticks, red pointer, ring colours |
 | `SettingsActivityTest` | 3 | Default scale 60 + labels, saving a scale, default fields and saving a choice |
 | `ZonesTest` | 2 | Power zones from FTP / profile, HR zones from max HR / profile |
 
@@ -103,7 +103,7 @@ Rendering tests use Robolectric native graphics (real `android.graphics` on the 
 
 ## Installation & testing status on the Karoo 3
 
-- Installed: **1.0.0**, 2026-11-07 13:58:27, together with Karoo Graphic Meter 0.9.0 (which no longer has the
+- Installed: **1.0.0** (1.0.1 built, not installed: a ride was open/paused on the Karoo), 2026-11-07 13:58:27, together with Karoo Graphic Meter 0.9.0 (which no longer has the
   Ride Meter). Extension connected (`KarooRideMeter: Karoo system connected: true`), no crash of this app.
 - **Seen on the device 2026-11-07 14:04** (S-Works profile, field re-added, 478×721 page): dial, pointer,
   `Di2 70%`, `Gear 52 / 14`, round fields Cadence / HR / Power 3s (chosen by the user in Ride Meter Settings).
@@ -126,7 +126,9 @@ Rendering tests use Robolectric native graphics (real `android.graphics` on the 
 - Screen at 14:43 (paused, 0:00:53, 0.2 km): dial scale **0–90** (chosen by the user), `Gear 52 / 19`, round fields `--`.
 - **Bug:** the battery read **`AXS GOOD` on the Di2 bike**. Ki2's % stream was not streaming at that moment, so the
   Ride Meter fell back to the generic `SHIFTING_BATTERY` stream, which Ki2 also feeds (Di2 added as a Karoo sensor)
-  and which the code always labels "AXS". Needs a fix (label from the source, or remember Di2 once Ki2 reported).
+  and which the code always labels "AXS". **Fixed in 1.0.1** (`ShiftBatteryTracker`): once Ki2 reported a %, the field
+  keeps "Di2" and the last known % while any shifting battery data keeps coming; it forgets Di2 only after 2 minutes
+  with no battery data at all while the field is on screen (e.g. after switching to the AXS bike).
 - The battery **icon** was hidden under the Karoo's yellow paused/recording bar at the top of the screen; only the
   text line below it was visible.
 - Only first values are logged, so live values during the ride cannot be checked afterwards.

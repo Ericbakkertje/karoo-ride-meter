@@ -113,7 +113,7 @@ class RideMeterDataType(
                     rideTimeSec = values[DataType.Type.RIDE_TIME]?.let { (it / 1000.0).toLong() },
                     gradePct = values[DataType.Type.ELEVATION_GRADE],
                     cadenceRpm = values[DataType.Type.CADENCE]?.roundToInt(),
-                    shiftBattery = ShiftBattery.pick(
+                    shiftBattery = SHIFT_BATTERY.update(
                         axsRaw = values["${DataType.Type.SHIFTING_BATTERY}/${DataType.Field.SHIFTING_BATTERY_STATUS_REAR_DERAILLEUR}"]
                             ?: values["${DataType.Type.SHIFTING_BATTERY}/${DataType.Field.SHIFTING_BATTERY_STATUS}"],
                         di2Pct = values[KI2_BATTERY],
@@ -150,6 +150,9 @@ class RideMeterDataType(
 
         /** Karoo speed is m/s (confirmed on rides). */
         const val MS_TO_KMH = 3.6
+
+        /** Shared by all Ride Meter fields in this app, so Di2 is remembered across pages. */
+        val SHIFT_BATTERY = ShiftBatteryTracker()
 
         /** Ki2 extension (id "ki2", com.valterc.ki2) numeric field: Shimano Di2 battery 0-100 %. */
         val KI2_BATTERY = DataType.dataTypeId("ki2", "DATATYPE_SHIFTING_BATTERY_PERCENTAGE")

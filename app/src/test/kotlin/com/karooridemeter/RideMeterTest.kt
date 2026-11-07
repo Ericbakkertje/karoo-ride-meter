@@ -160,6 +160,43 @@ class RideMeterTest {
     }
 
     @Test
+    fun di2IsRememberedWhenKi2PercentPauses() {
+        var t = 0L
+        val tracker = ShiftBatteryTracker { t }
+        // Page start: no data yet, then Ki2 reports 70 %.
+        assertNull(tracker.update(axsRaw = null, di2Pct = null))
+        t += 1_000
+        assertEquals(ShiftBattery.di2(70.0), tracker.update(axsRaw = 1.0, di2Pct = 70.0))
+        // Ki2's % stream pauses; only the generic status (fed by Ki2 too) is left: still Di2 70 %, not "AXS GOOD".
+        t += 60_000
+        assertEquals(ShiftBattery.di2(70.0), tracker.update(axsRaw = 1.0, di2Pct = null))
+        // A short gap with no battery data at all keeps Di2 as well.
+        t += 30_000
+        assertEquals(ShiftBattery.di2(70.0), tracker.update(axsRaw = null, di2Pct = null))
+        t += 60_000
+        assertEquals("Di2", tracker.update(axsRaw = null, di2Pct = null)!!.system)
+    }
+
+    @Test
+    fun di2IsForgottenAfterTwoMinutesWithoutBatteryData() {
+        var t = 0L
+        val tracker = ShiftBatteryTracker { t }
+        tracker.update(axsRaw = null, di2Pct = 70.0)
+        tracker.update(axsRaw = null, di2Pct = null) // silence starts
+        t += ShiftBatteryTracker.FORGET_AFTER_MS + 1
+        assertNull(tracker.update(axsRaw = null, di2Pct = null))
+        // Now on the AXS bike: shown as AXS.
+        assertEquals(ShiftBattery("AXS", DrivetrainBattery.GOOD), tracker.update(axsRaw = 1.0, di2Pct = null))
+    }
+
+    @Test
+    fun axsOnlyStaysAxs() {
+        val tracker = ShiftBatteryTracker { 0L }
+        assertEquals(ShiftBattery("AXS", DrivetrainBattery.OK), tracker.update(axsRaw = 2.0, di2Pct = null))
+        assertNull(ShiftBatteryTracker { 0L }.update(axsRaw = null, di2Pct = null))
+    }
+
+    @Test
     fun tickStepsGiveWholeNumberLabels() {
         assertEquals(10 to 2, RideRenderer.tickSteps(60))
         assertEquals(10 to 5, RideRenderer.tickSteps(90))
