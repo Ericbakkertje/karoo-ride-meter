@@ -110,7 +110,7 @@ class ShiftBatteryTracker(private val now: () -> Long = System::currentTimeMilli
 /** What the line under the speed shows. Chosen in Settings. */
 enum class UnderSpeed(val settingsName: String) {
     DISTANCE("Distance (61.2 km)"),
-    AVG_SPEED("Average speed (AVG 26.1)"),
+    AVG_SPEED("Average speed (AVG 26.08)"),
     ;
 
     companion object {
@@ -192,7 +192,7 @@ data class RideModel(
     /** Top of the dial scale in km/h (30, 45, 60 or 90). */
     val scaleMaxKmh: Int,
     val gearText: String,
-    /** Value under the speed: distance ("61.2 km") or average speed ("26.1"; km/h is shown above the speed). */
+    /** Value under the speed: distance ("61.2 km") or average speed ("26.08", two decimals; km/h is shown above the speed). */
     val underSpeedText: String,
     /** Small label drawn above [underSpeedText] ("AVG"), or null for none (distance). */
     val underSpeedLabel: String? = null,
@@ -216,7 +216,7 @@ object RideGauge {
             gearText = "${s.frontTeeth ?: "--"} / ${s.rearTeeth ?: "--"}",
             underSpeedText = when (s.underSpeed) {
                 UnderSpeed.DISTANCE -> "${s.distanceKm?.let { oneDecimal(it) } ?: "--"} km"
-                UnderSpeed.AVG_SPEED -> s.avgKmh?.let { oneDecimal(it) } ?: "--"
+                UnderSpeed.AVG_SPEED -> s.avgKmh?.let { String.format(Locale.US, "%.2f", it) } ?: "--"
             },
             underSpeedLabel = if (s.underSpeed == UnderSpeed.AVG_SPEED) "AVG" else null,
             slots = s.slots.take(3).map { slot(it, s) },

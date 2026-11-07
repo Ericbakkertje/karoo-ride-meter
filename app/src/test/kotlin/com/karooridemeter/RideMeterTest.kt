@@ -40,7 +40,7 @@ class RideMeterTest {
         assertEquals("40 / 15", m.gearText)
         assertEquals("61.2 km", m.underSpeedText)
         val avg = RideGauge.model(state().copy(underSpeed = UnderSpeed.AVG_SPEED, avgKmh = 26.08))
-        assertEquals("26.1", avg.underSpeedText)
+        assertEquals("26.08", avg.underSpeedText)
         assertEquals("AVG", avg.underSpeedLabel)
         assertEquals(null, m.underSpeedLabel)
         assertEquals(
