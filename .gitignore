@@ -1,0 +1,10 @@
+# Gradle / build output
+.gradle/
+build/
+app/build/
+
+# Machine-specific
+local.properties
+.idea/
+*.iml
+.DS_Store

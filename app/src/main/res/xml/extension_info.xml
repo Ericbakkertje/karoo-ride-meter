@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- id must match the extension id passed to KarooExtension in RideMeterExtension.kt -->
+<ExtensionInfo
+    displayName="@string/extension_name"
+    icon="@drawable/ic_ride_meter"
+    id="karoo-ride-meter"
+    scansDevices="false"
+    mapLayer="false"
+    fitFile="false">
+
+    <!-- Graphical field: RideMeterDataType.startView draws the dial face with round fields. -->
+    <DataType
+        description="@string/ride_meter_description"
+        displayName="@string/ride_meter_name"
+        graphical="true"
+        icon="@drawable/ic_ride_meter"
+        typeId="ride-meter" />
+
+</ExtensionInfo>
