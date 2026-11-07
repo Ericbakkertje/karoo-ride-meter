@@ -103,7 +103,9 @@ Rendering tests use Robolectric native graphics (real `android.graphics` on the 
 
 ## Installation & testing status on the Karoo 3
 
-- **Not installed yet.** Install together with Karoo Graphic Meter 0.9.0 (which no longer has the Ride Meter).
+- Installed: **1.0.0**, 2026-11-07 13:58:27, together with Karoo Graphic Meter 0.9.0 (which no longer has the
+  Ride Meter). Extension connected (`KarooRideMeter: Karoo system connected: true`), no crash.
+  Field not yet re-added on a page.
 - Verified as part of Graphic Meter 0.8.0/0.8.1 on 2026-11-07: dial and round fields render (478×721 page);
   Di2 battery (`Di2 70%`) and gear (`Gear 52 / 14`) via Ki2 on the S-Works profile.
 
