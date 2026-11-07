@@ -167,6 +167,14 @@ Rendering tests use Robolectric native graphics (real `android.graphics` on the 
 - Only first values are logged, so live values during the ride cannot be checked afterwards.
 - FIT: 53 s moving, 0.21 km, avg 13.9 km/h, grade −1.1 … +0.6 %, altitude 0.0–0.2 m.
 
+## Test ride with the release build 2026-11-07 (15:35:51–15:38, S-Works / Di2, FIT `5dccf2f4…`)
+
+- No crash at all in the crash log (our apps, Ki2 and the Karoo ride app).
+- Ride Meter (release 1.1.1) and Graphic Meter both received live data; first values: Ki2 battery 70 %,
+  `SHIFTING_BATTERY_STATUS` 1 (GOOD), gear 52 T front (2/2), 17 T rear (6/12), HR avg/max 83 (HR strap on this time).
+- FIT: 1 min moving, 0.24 km, avg 13.2 km/h, cadence avg 39 / max 53 rpm, grade −0.9 … +1.8 %, altitude 0.2–0.8 m.
+- On-screen values during the ride were not checked (only first values are logged; the screen was not captured).
+
 ## Next steps
 
 1. Install, re-add the Ride Meter field on the Diverge and S-Works pages, set the three fields in "Ride Meter Settings".
