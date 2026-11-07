@@ -1,12 +1,12 @@
 # Karoo Ride Meter — Project Status
 
-_Last updated: 2026-11-07 — 1.1.0: status row (battery left, gear right), distance or average speed under the speed (branch `feature/gear-top-row`)._
+_Last updated: 2026-11-07 — 1.1.1: average speed under the speed with two decimals (1.1.0: status row, distance / average speed choice) (branch `feature/gear-top-row`)._
 
 ## Version
 
 | | |
 |---|---|
-| App version | **1.1.0** (`versionCode 3`) |
+| App version | **1.1.1** (`versionCode 4`) |
 | Application ID | `com.karooridemeter` |
 | Extension ID | `karoo-ride-meter` (field typeId `ride-meter`) |
 | Hammerhead SDK | `io.hammerhead:karoo-ext:1.1.9` |
@@ -33,7 +33,8 @@ Because the extension id changed, a Ride Meter field placed on a page with the G
   the dial's right edge). On full-page fields (h ≥ 600) the row starts below the top 6 %, where the Karoo's
   ride bar (time / paused) covers the field; the dial and circles move down to make room.
 - The gear line inside the dial is gone. **Under the speed** (Settings, "Under the speed"): **Distance** (default,
-  `142.7 km`) or **Average speed** (small grey `AVG` label above `26.1`; km/h is already shown above the speed).
+  `142.7 km`) or **Average speed** (small grey `AVG` label above `26.08` — two decimals since 1.1.1; km/h is already shown above the speed;
+  the round field "Average speed" keeps one decimal).
   A larger distance in the bottom gap of the dial was tried and rejected by the user (kept the small size).
 
 ## The Ride Meter field (`ride-meter`) — `RideMeterDataType`, `RideGauge`, `RideRenderer`
@@ -88,8 +89,8 @@ Because the extension id changed, a Ride Meter field placed on a page with the G
 ```
 ~/Downloads/karoo-ride-meter/app/build/outputs/apk/debug/app-debug.apk
 ```
-Built 2026-11-07 (1.1.0) · 3,701,069 bytes ·
-SHA-256 `39a947f42981d66477d0735b8d493d308e8dc6c20261fddc65663767840f4715`
+Built 2026-11-07 (1.1.1) · 3,701,093 bytes ·
+SHA-256 `6e860cada18f2e4f731187b664405a277d7c4fbba1c67e7122e7d2cdb683e8c4`
 
 Build and test:
 ```bash
@@ -113,7 +114,7 @@ Rendering tests use Robolectric native graphics (real `android.graphics` on the 
 
 ## Installation & testing status on the Karoo 3
 
-- Installed: **1.1.0**, 2026-11-07 15:09:30 (extension connected, no crash). Seen on screen 15:11 (478×721, scale 0–90): status row with
+- Installed: **1.1.1**, 2026-11-07 15:17:10 (connected, no crash). Before: 1.1.0, 2026-11-07 15:09:30 (extension connected, no crash). Seen on screen 15:11 (478×721, scale 0–90): status row with
   `SHIFT --` left and `-- / --` GEAR right (shifting asleep), `-- km` under the speed, round fields; layout as in the previews.
   Before: 1.0.1, 2026-11-07 14:47:22 (after the short ride was saved; extension reconnected, no crash).
   Earlier: 1.0.0 at 13:58:27, together with Karoo Graphic Meter 0.9.0 (which no longer has the
