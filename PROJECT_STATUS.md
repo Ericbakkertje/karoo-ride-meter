@@ -113,7 +113,8 @@ Rendering tests use Robolectric native graphics (real `android.graphics` on the 
 
 ## Installation & testing status on the Karoo 3
 
-- Installed: **1.1.0**, 2026-11-07 15:09:30 (extension connected, no crash; not yet seen on screen).
+- Installed: **1.1.0**, 2026-11-07 15:09:30 (extension connected, no crash). Seen on screen 15:11 (478×721, scale 0–90): status row with
+  `SHIFT --` left and `-- / --` GEAR right (shifting asleep), `-- km` under the speed, round fields; layout as in the previews.
   Before: 1.0.1, 2026-11-07 14:47:22 (after the short ride was saved; extension reconnected, no crash).
   Earlier: 1.0.0 at 13:58:27, together with Karoo Graphic Meter 0.9.0 (which no longer has the
   Ride Meter). Extension connected (`KarooRideMeter: Karoo system connected: true`), no crash of this app.
