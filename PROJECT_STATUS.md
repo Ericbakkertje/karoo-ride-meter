@@ -99,6 +99,9 @@ key, or testers cannot update over their installed version.
 matches `dist/`, not debuggable, extension connected, no crash). Settings were reset by the uninstall; before it
 they were: scale 0–90, fields Cadence / HR / Power 3s, under the speed = distance (default).
 From now on install release builds there (`adb install -r dist/...apk`); a debug build no longer installs over it.
+Seen on screen 15:31 (478×721, release build): field re-added via the picker (preview 478×642 at 15:30:54),
+live speed 1.7 km/h, scale 0–60, under the speed = AVG (`--`, no ride recording), fields Cadence / HR / Power 3s,
+`SHIFT --` and `-- / --` (shifting asleep). No errors.
 
 ## Latest APK
 
