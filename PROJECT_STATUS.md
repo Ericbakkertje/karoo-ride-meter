@@ -117,6 +117,20 @@ Rendering tests use Robolectric native graphics (real `android.graphics` on the 
 - Verified as part of Graphic Meter 0.8.0/0.8.1 on 2026-11-07: dial and round fields render (478×721 page);
   Di2 battery (`Di2 70%`) and gear (`Gear 52 / 14`) via Ki2 on the S-Works profile.
 
+## Short ride 2026-11-07 (~14:38–14:43, S-Works / Di2, no HR strap; ride paused, not yet saved)
+
+- No crash of either app, and no new crash of the Karoo ride app (only the 14:02 OOM in the crash log).
+- First values seen: power 51 W (3s/10s/30s 51), avg power 74, max 74, W/kg 0.689 (= 51 W / 74 kg, so **W/kg confirmed**),
+  NP first value `4.9E-324` (Double.MIN_VALUE, the Karoo's "no value yet"; shown as 0), cadence 0 while power was 51
+  (no cadence source?), max speed 3.70 m/s (13.3 km/h), calories 0.16 (fractional kcal), ride time 0 at start.
+- Screen at 14:43 (paused, 0:00:53, 0.2 km): dial scale **0–90** (chosen by the user), `Gear 52 / 19`, round fields `--`.
+- **Bug:** the battery read **`AXS GOOD` on the Di2 bike**. Ki2's % stream was not streaming at that moment, so the
+  Ride Meter fell back to the generic `SHIFTING_BATTERY` stream, which Ki2 also feeds (Di2 added as a Karoo sensor)
+  and which the code always labels "AXS". Needs a fix (label from the source, or remember Di2 once Ki2 reported).
+- The battery **icon** was hidden under the Karoo's yellow paused/recording bar at the top of the screen; only the
+  text line below it was visible.
+- Only first values are logged, so live values during the ride cannot be checked afterwards.
+
 ## Next steps
 
 1. Install, re-add the Ride Meter field on the Diverge and S-Works pages, set the three fields in "Ride Meter Settings".
