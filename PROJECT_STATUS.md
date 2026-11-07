@@ -1,12 +1,12 @@
 # Karoo Ride Meter — Project Status
 
-_Last updated: 2026-11-07 — 1.0.1: Di2 stays "Di2" when Ki2's % stream pauses (1.0.0: split off from Karoo Graphic Meter)._
+_Last updated: 2026-11-07 — 1.1.0: status row (battery left, gear right), distance or average speed under the speed (branch `feature/gear-top-row`)._
 
 ## Version
 
 | | |
 |---|---|
-| App version | **1.0.1** (`versionCode 2`) |
+| App version | **1.1.0** (`versionCode 3`) |
 | Application ID | `com.karooridemeter` |
 | Extension ID | `karoo-ride-meter` (field typeId `ride-meter`) |
 | Hammerhead SDK | `io.hammerhead:karoo-ext:1.1.9` |
@@ -25,6 +25,16 @@ from Graphic Meter 0.8.1 (branch `feature/ride-dial`, commit history there), wit
 
 Because the extension id changed, a Ride Meter field placed on a page with the Graphic Meter must be
 **re-added** from the "Ride Meter" extension in the Karoo field picker.
+
+## 1.1.0 layout changes (approved from previews on 2026-11-07)
+
+- **Status row** above the dial: battery block on the left (icon + `Di2 70%` / `AXS GOOD`, centred on each other,
+  starting at the dial's left edge) and gear block on the right (`52 / 14` with `GEAR` centred under it, ending at
+  the dial's right edge). On full-page fields (h ≥ 600) the row starts below the top 6 %, where the Karoo's
+  ride bar (time / paused) covers the field; the dial and circles move down to make room.
+- The gear line inside the dial is gone. **Under the speed** (Settings, "Under the speed"): **Distance** (default,
+  `142.7 km`) or **Average speed** (small grey `AVG` label above `26.1`; km/h is already shown above the speed).
+  A larger distance in the bottom gap of the dial was tried and rejected by the user (kept the small size).
 
 ## The Ride Meter field (`ride-meter`) — `RideMeterDataType`, `RideGauge`, `RideRenderer`
 - **0.8.0 design (approved from a preview on 2026-11-07):** 270° **dial face** instead of the colour band —
@@ -78,8 +88,8 @@ Because the extension id changed, a Ride Meter field placed on a page with the G
 ```
 ~/Downloads/karoo-ride-meter/app/build/outputs/apk/debug/app-debug.apk
 ```
-Built 2026-11-07 (1.0.1) · 3,696,870 bytes ·
-SHA-256 `bea913207a66d544b2ec4f5ceb7940517f05a9596a63bf772f94e6af3fb5c57d`
+Built 2026-11-07 (1.1.0) · 3,701,069 bytes ·
+SHA-256 `39a947f42981d66477d0735b8d493d308e8dc6c20261fddc65663767840f4715`
 
 Build and test:
 ```bash
@@ -91,19 +101,20 @@ Requires a GitHub token with `read:packages` in `~/.gradle/gradle.properties` (`
 
 ## Tests (Mac)
 
-**21 / 21 passing** (`./gradlew testDebugUnitTest`):
+**22 / 22 passing** (`./gradlew testDebugUnitTest`):
 
 | Test class | Tests | Covers |
 |---|---|---|
 | `RideMeterTest` | 16 | Texts/colours, Di2 memory when Ki2's % pauses (and forgetting it after 2 min of silence), every field choice, AXS level mapping, AXS/Di2 battery choice and Ki2 id, tick steps, previews at 7 sizes + every battery level (PNGs in `app/build/gauge-previews/`), dial and circles inside the field, lit/dim ticks, red pointer, ring colours |
-| `SettingsActivityTest` | 3 | Default scale 60 + labels, saving a scale, default fields and saving a choice |
+| `SettingsActivityTest` | 4 | Default scale 60 + labels, saving a scale, under-the-speed choice, default fields and saving a choice |
 | `ZonesTest` | 2 | Power zones from FTP / profile, HR zones from max HR / profile |
 
 Rendering tests use Robolectric native graphics (real `android.graphics` on the Mac).
 
 ## Installation & testing status on the Karoo 3
 
-- Installed: **1.0.1**, 2026-11-07 14:47:22 (after the short ride was saved; extension reconnected, no crash).
+- Installed: **1.1.0**, 2026-11-07 15:09:30 (extension connected, no crash; not yet seen on screen).
+  Before: 1.0.1, 2026-11-07 14:47:22 (after the short ride was saved; extension reconnected, no crash).
   Earlier: 1.0.0 at 13:58:27, together with Karoo Graphic Meter 0.9.0 (which no longer has the
   Ride Meter). Extension connected (`KarooRideMeter: Karoo system connected: true`), no crash of this app.
 - **Seen on the device 2026-11-07 14:04** (S-Works profile, field re-added, 478×721 page): dial, pointer,
