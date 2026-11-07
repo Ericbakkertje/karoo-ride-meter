@@ -53,6 +53,9 @@ object RideRenderer {
     const val TICK_DIM = 0xFF5B6B85.toInt()
     const val RING = 0xFF33415C.toInt()
 
+    /** Share of a full-page field covered by the Karoo's ride bar while recording or paused (about 45 of 721 px). */
+    const val RIDE_BAR = 0.063f
+
     /** Three stacked circles in a wide field need at least this diameter; otherwise circle / line / circle. */
     private const val MIN_STACKED = 90f
 
@@ -63,9 +66,9 @@ object RideRenderer {
         val h = height.toFloat()
         val pad = maxOf(3f, min(w, h) * 0.03f)
         // Status row: icon height from the field size. On a full-page field the Karoo's ride bar (time, paused)
-        // covers about the top 6 % of the field, so the row starts below it there.
+        // covers about the top 45 px (6.3 %) of the field, so the row starts right below it there.
         val icon = maxOf(8f, min(w, h) * 0.047f)
-        val statusTop = pad + if (h >= 600f) h * 0.06f else 0f
+        val statusTop = if (h >= 600f) maxOf(pad, h * RIDE_BAR) else pad
         val statusBottom = statusTop + icon * STATUS_ROW
         val gap = pad * 0.5f
         fun fit(aw: Float, ah: Float) = min(aw / 2f, ah / (1f + BELOW))
@@ -76,12 +79,12 @@ object RideRenderer {
             return RideLayout(w / 2f, top + r, r, emptyList(), pad, statusTop, icon)
         }
         if (h > w * 1.15f) {
-            // Tall: status row, dial, then three circles in a row; dial + row centred in the space left.
+            // Tall: status row, dial right under it, then three circles in a row; spare height stays at the bottom.
             val cw = (w - 4 * pad) / 3f
             val rowH = min(h * 0.26f, cw)
             val avail = h - pad - statusBottom - gap
             val r = fit(w - 2 * pad, avail - pad - rowH)
-            val top = statusBottom + gap + (avail - (r * (1f + BELOW) + pad + rowH)) / 2f
+            val top = statusBottom + gap
             val rowCy = top + r * (1f + BELOW) + pad + rowH / 2f
             val fields = (0..2).map { RideField(pad + it * (cw + pad) + cw / 2f, rowCy, min(cw, rowH)) }
             return RideLayout(w / 2f, top + r, r, fields, pad, statusTop, icon)

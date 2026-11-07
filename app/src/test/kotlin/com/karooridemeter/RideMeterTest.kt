@@ -239,8 +239,11 @@ class RideMeterTest {
             assertTrue("$w x $h status row above dial", l.statusBottom <= l.cy - l.radius + 0.5f)
             assertTrue("$w x $h status row inside", l.statusTop >= 0f)
         }
-        // Full-page field: the row starts below the Karoo's ride bar (top ~6 %).
-        assertTrue(RideRenderer.layout(478, 721).statusTop >= 721 * 0.06f)
+        // Full-page field: the row starts right below the Karoo's ride bar (top ~6.3 %), and the dial follows
+        // straight after it, so the content sits high with the spare height at the bottom.
+        val full = RideRenderer.layout(478, 721)
+        assertTrue(full.statusTop >= 721 * 0.06f && full.statusTop <= 721 * 0.07f)
+        assertTrue(full.cy - full.radius - full.statusBottom <= full.padding)
         // Wide half-screen field: three stacked circles; short strip: circle, line, circle.
         assertTrue(RideRenderer.layout(478, 456).fields.all { it.line == null })
         assertTrue(RideRenderer.layout(478, 228).fields[1].line != null)
