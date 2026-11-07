@@ -121,6 +121,7 @@ class RideMeterDataType(
                     clock = clockFormat.format(Date()),
                     // Read on every frame so a Settings change applies straight away.
                     slots = RideSettings.rideSlots(appContext),
+                    underSpeed = RideSettings.underSpeed(appContext),
                     heartRate = int(DataType.Type.HEART_RATE),
                     power = int(DataType.Type.POWER),
                     power3s = int(DataType.Type.SMOOTHED_3S_AVERAGE_POWER),

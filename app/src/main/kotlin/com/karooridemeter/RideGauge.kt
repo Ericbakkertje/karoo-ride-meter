@@ -107,6 +107,18 @@ class ShiftBatteryTracker(private val now: () -> Long = System::currentTimeMilli
     }
 }
 
+/** What the line under the speed shows. Chosen in Settings. */
+enum class UnderSpeed(val settingsName: String) {
+    DISTANCE("Distance (61.2 km)"),
+    AVG_SPEED("Average speed (AVG 26.1)"),
+    ;
+
+    companion object {
+        val DEFAULT = DISTANCE
+        fun fromName(name: String?) = entries.firstOrNull { it.name == name } ?: DEFAULT
+    }
+}
+
 /** What a Ride Meter box can show. Chosen per box in Settings; [label] is drawn in the box. */
 enum class RideSlotValue(val label: String, val settingsName: String) {
     SLOPE("SLOPE %", "Slope %"),
@@ -146,6 +158,8 @@ data class RideState(
     val shiftBattery: ShiftBattery? = null,
     /** Current time of day, already formatted (e.g. "12:44"). */
     val clock: String = "--",
+    /** What the line under the speed shows. */
+    val underSpeed: UnderSpeed = UnderSpeed.DEFAULT,
     /** What the three boxes show (top/left first). */
     val slots: List<RideSlotValue> = RideSlotValue.DEFAULTS,
     val gradePct: Double? = null,
@@ -178,8 +192,10 @@ data class RideModel(
     /** Top of the dial scale in km/h (30, 45, 60 or 90). */
     val scaleMaxKmh: Int,
     val gearText: String,
-    /** Distance under the gear, e.g. "61.2 km". */
-    val distanceText: String,
+    /** Value under the speed: distance ("61.2 km") or average speed ("26.1"; km/h is shown above the speed). */
+    val underSpeedText: String,
+    /** Small label drawn above [underSpeedText] ("AVG"), or null for none (distance). */
+    val underSpeedLabel: String? = null,
     /** The three boxes, top/left first. */
     val slots: List<RideSlot>,
     val shiftBattery: ShiftBattery?,
@@ -197,8 +213,12 @@ object RideGauge {
             unit = "km/h",
             position = s.kmh?.let { (it.coerceIn(0.0, max.toDouble()) / max).toFloat() },
             scaleMaxKmh = max,
-            gearText = "Gear ${s.frontTeeth ?: "--"} / ${s.rearTeeth ?: "--"}",
-            distanceText = "${s.distanceKm?.let { oneDecimal(it) } ?: "--"} km",
+            gearText = "${s.frontTeeth ?: "--"} / ${s.rearTeeth ?: "--"}",
+            underSpeedText = when (s.underSpeed) {
+                UnderSpeed.DISTANCE -> "${s.distanceKm?.let { oneDecimal(it) } ?: "--"} km"
+                UnderSpeed.AVG_SPEED -> s.avgKmh?.let { oneDecimal(it) } ?: "--"
+            },
+            underSpeedLabel = if (s.underSpeed == UnderSpeed.AVG_SPEED) "AVG" else null,
             slots = s.slots.take(3).map { slot(it, s) },
             shiftBattery = s.shiftBattery,
         )

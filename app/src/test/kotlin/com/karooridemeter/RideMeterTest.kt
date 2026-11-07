@@ -37,8 +37,12 @@ class RideMeterTest {
     fun modelFormatsAllValues() {
         val m = RideGauge.model(state())
         assertEquals("28.4", m.speedText)
-        assertEquals("Gear 40 / 15", m.gearText)
-        assertEquals("61.2 km", m.distanceText)
+        assertEquals("40 / 15", m.gearText)
+        assertEquals("61.2 km", m.underSpeedText)
+        val avg = RideGauge.model(state().copy(underSpeed = UnderSpeed.AVG_SPEED, avgKmh = 26.08))
+        assertEquals("26.1", avg.underSpeedText)
+        assertEquals("AVG", avg.underSpeedLabel)
+        assertEquals(null, m.underSpeedLabel)
         assertEquals(
             listOf(
                 RideSlot("SLOPE %", "-4.1", GaugePalette.ZONES[0]),
@@ -57,8 +61,9 @@ class RideMeterTest {
         val m = RideGauge.model(state(null))
         assertNull(m.speedText)
         assertNull(m.position)
-        assertEquals("Gear -- / --", m.gearText)
-        assertEquals("-- km", m.distanceText)
+        assertEquals("-- / --", m.gearText)
+        assertEquals("-- km", m.underSpeedText)
+        assertEquals("--", RideGauge.model(state(null).copy(underSpeed = UnderSpeed.AVG_SPEED)).underSpeedText)
         assertEquals(RideSlot("SLOPE %", null, RideGauge.NEUTRAL), m.slots[0])
     }
 
@@ -228,6 +233,14 @@ class RideMeterTest {
                 assertTrue("$w x $h circle overlaps dial", f.cx - rr >= l.cx + l.radius || f.cy - rr >= l.cy + l.radius * 0.7f)
             }
         }
+        // Status row (battery left, gear right) sits above the dial in every size.
+        for ((w, h) in sizes) {
+            val l = RideRenderer.layout(w, h)
+            assertTrue("$w x $h status row above dial", l.statusBottom <= l.cy - l.radius + 0.5f)
+            assertTrue("$w x $h status row inside", l.statusTop >= 0f)
+        }
+        // Full-page field: the row starts below the Karoo's ride bar (top ~6 %).
+        assertTrue(RideRenderer.layout(478, 721).statusTop >= 721 * 0.06f)
         // Wide half-screen field: three stacked circles; short strip: circle, line, circle.
         assertTrue(RideRenderer.layout(478, 456).fields.all { it.line == null })
         assertTrue(RideRenderer.layout(478, 228).fields[1].line != null)

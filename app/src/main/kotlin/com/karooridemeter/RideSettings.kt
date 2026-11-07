@@ -7,6 +7,7 @@ object RideSettings {
     private const val PREFS = "ride_meter_settings"
     private const val KEY_SCALE_MAX = "speed_scale_max_kmh"
     private const val KEY_SLOT = "ride_slot_"
+    private const val KEY_UNDER_SPEED = "under_speed"
 
     /** Dial scale: each option ends on a numbered tick (see RideRenderer.tickSteps). */
     const val DEFAULT_SCALE_MAX_KMH = 60
@@ -30,6 +31,13 @@ object RideSettings {
     fun setRideSlot(context: Context, index: Int, value: RideSlotValue) {
         require(index in 0..2) { "Ride Meter has 3 fields, got $index" }
         prefs(context).edit().putString(KEY_SLOT + index, value.name).apply()
+    }
+
+    /** Line under the speed: distance (default) or average speed. */
+    fun underSpeed(context: Context): UnderSpeed = UnderSpeed.fromName(prefs(context).getString(KEY_UNDER_SPEED, null))
+
+    fun setUnderSpeed(context: Context, value: UnderSpeed) {
+        prefs(context).edit().putString(KEY_UNDER_SPEED, value.name).apply()
     }
 
     private fun prefs(context: Context) =

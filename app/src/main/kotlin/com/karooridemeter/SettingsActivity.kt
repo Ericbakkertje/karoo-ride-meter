@@ -14,13 +14,16 @@ import android.widget.Spinner
 import android.widget.TextView
 
 /**
- * Settings screen: dial scale and what the three round fields show.
+ * Settings screen: dial scale, the line under the speed and what the three round fields show.
  * Choices are saved immediately; an open Ride Meter updates within a second.
  */
 class SettingsActivity : Activity() {
 
     /** Scale max (km/h) -> its radio button. Internal for tests. */
     internal val scaleButtons = linkedMapOf<Int, RadioButton>()
+
+    /** Line under the speed -> its radio button. Internal for tests. */
+    internal val underSpeedButtons = linkedMapOf<UnderSpeed, RadioButton>()
 
     /** Field index -> its dropdown. Internal for tests. */
     internal val slotSpinners = mutableListOf<Spinner>()
@@ -59,6 +62,25 @@ class SettingsActivity : Activity() {
             scaleButtons.entries.firstOrNull { it.value.id == checkedId }?.let { RideSettings.setScaleMaxKmh(this, it.key) }
         }
         root.addView(group)
+
+        // Line under the speed
+        root.addView(sectionTitle(R.string.settings_under_speed))
+        val under = RadioGroup(this)
+        UnderSpeed.entries.forEach { option ->
+            val button = RadioButton(this).apply {
+                id = View.generateViewId()
+                text = option.settingsName
+                textSize = 18f
+                minHeight = (48 * density).toInt()
+            }
+            under.addView(button)
+            underSpeedButtons[option] = button
+        }
+        underSpeedButtons[RideSettings.underSpeed(this)]?.let { under.check(it.id) }
+        under.setOnCheckedChangeListener { _, checkedId ->
+            underSpeedButtons.entries.firstOrNull { it.value.id == checkedId }?.let { RideSettings.setUnderSpeed(this, it.key) }
+        }
+        root.addView(under)
 
         // Round fields
         root.addView(sectionTitle(R.string.settings_ride_boxes))

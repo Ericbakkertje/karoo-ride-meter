@@ -35,6 +35,16 @@ class SettingsActivityTest {
     }
 
     @Test
+    fun underSpeedDefaultsToDistanceAndSavesChoice() {
+        assertEquals(UnderSpeed.DISTANCE, RideSettings.underSpeed(context))
+        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        assertEquals(UnderSpeed.entries, activity.underSpeedButtons.keys.toList())
+        assertTrue(activity.underSpeedButtons.getValue(UnderSpeed.DISTANCE).isChecked)
+        activity.underSpeedButtons.getValue(UnderSpeed.AVG_SPEED).performClick()
+        assertEquals(UnderSpeed.AVG_SPEED, RideSettings.underSpeed(context))
+    }
+
+    @Test
     fun fieldsDefaultAndSaveChoice() {
         assertEquals(RideSlotValue.DEFAULTS, RideSettings.rideSlots(context))
         val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
