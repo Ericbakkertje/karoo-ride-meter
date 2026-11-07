@@ -84,6 +84,20 @@ Because the extension id changed, a Ride Meter field placed on a page with the G
   mostly on the 15/13/17.
 
 
+## Release APK for testers (1.1.1)
+
+```
+~/Downloads/karoo-ride-meter/dist/KarooRideMeter-1.1.1.apk   (+ dist/TESTERS.md, install notes in Dutch)
+```
+Release build (`./gradlew assembleRelease`, not debuggable, no minify), 2,925,508 bytes ·
+SHA-256 `881bd270c744faa552d8cca89cadcdf3d3e239cfe3ca97dc7d5dc2add8aa9082`.
+Signed (v1 + v2) with the **release key** `~/Downloads/karoo-signing/karoo-release.jks` (alias `karoo`,
+certificate SHA-256 `5a8c8cbe…415ae4`). Passwords are in `keystore.properties` (project root, git-ignored) and a
+backup copy in `~/Downloads/karoo-signing/`. **Back up that folder**: every future release must be signed with this
+key, or testers cannot update over their installed version.
+The Karoo of the developer has the **debug-signed** 1.1.1; installing the release APK there needs an uninstall first
+(different signature; Ride Meter Settings reset to defaults).
+
 ## Latest APK
 
 ```

@@ -4,6 +4,9 @@ build/
 app/build/
 
 # Machine-specific
+keystore.properties
+*.jks
+dist/
 local.properties
 .idea/
 *.iml

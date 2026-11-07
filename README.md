@@ -20,6 +20,23 @@ Requirements: JDK 17, Android SDK (platform 34), and a GitHub token with `read:p
 JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ./gradlew testDebugUnitTest assembleDebug
 ```
 
+## Release build (for testers)
+
+Needs `keystore.properties` in the project root (git-ignored) pointing to the release key:
+
+```properties
+storeFile=/path/to/karoo-release.jks
+storePassword=...
+keyAlias=karoo
+keyPassword=...
+```
+
+```bash
+JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ./gradlew assembleRelease
+```
+
+APK: `app/build/outputs/apk/release/app-release.apk`. Tester notes: `TESTERS.md`.
+
 ## Install on Karoo 3
 
 ```bash
