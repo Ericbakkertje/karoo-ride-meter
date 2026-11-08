@@ -19,8 +19,8 @@ android {
         applicationId = "com.karooridemeter"
         minSdk = 23        // SDK sample minimum; Karoo 3 runs Android 12L (API 32)
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.1.2"
+        versionCode = 6
+        versionName = "1.2.0"
     }
 
     signingConfigs {

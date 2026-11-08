@@ -1,17 +1,34 @@
 # Karoo Ride Meter — Project Status
 
-_Last updated: 2026-11-07 — 1.1.2: full-page layout moved up (release build on main, installed)._
+_Last updated: 2026-11-08 — 1.2.0: light/dark mode, bright colours, choosable spots above the dial, AXS FULL, bigger status text (release built, not yet installed)._
 
 ## Version
 
 | | |
 |---|---|
-| App version | **1.1.2** (`versionCode 5`) |
+| App version | **1.2.0** (`versionCode 6`) |
 | Application ID | `com.karooridemeter` |
 | Extension ID | `karoo-ride-meter` (field typeId `ride-meter`) |
 | Hammerhead SDK | `io.hammerhead:karoo-ext:1.1.9` |
 | Toolchain | Kotlin 2.0.0, Android Gradle Plugin 8.5.2, Gradle 8.8 (wrapper), JDK 17 |
 | Android | compileSdk/targetSdk 34, minSdk 23 (Karoo 3 runs Android 12L, API 32; Karoo 2 confirmed working by a tester) |
+
+## 1.2.0 (2026-11-08, approved from previews)
+
+- **AXS FULL:** the top battery level reads FULL instead of the SDK name NEW (`DrivetrainBattery.label`).
+- **Light/dark mode:** `RideTheme` (Palette.kt). The data field reads `UiModeManager.nightMode` every frame
+  (Karoo sets it: dark = "Night mode: yes", light = "no"; checked on the device 2026-11-08), so the field follows a
+  switch within a second. Light: light-grey card, dark text and ticks, always the bright ring colours.
+- **Dark-mode colours:** Settings choice normal (neon, default) or bright (`RideTheme.BRIGHT_ZONES`).
+- **Spots above the dial** (`StatusValue`, Settings "Above the dial"): shifting battery (default left), gear
+  (default right), temperature, grade, altitude (`PRESSURE_ELEVATION_CORRECTION`), elevation gain, distance to finish
+  (`DISTANCE_TO_DESTINATION`, assumed metres, unverified), or nothing. Both nothing: no status row, the dial moves up.
+- **Bigger status text:** about 30 % larger (row height 2.35 → 2.85 icon heights); the battery text shrinks to fit
+  next to the dial ("AXS CRITICAL" on a half page).
+- Release APK `dist/KarooRideMeter-1.2.0.apk`, SHA-256 `e44fb67507b6cf764be994ad4ba5ca49c6451b8a85b3ceac3d03860b30ff3244`,
+  same release key as 1.1.x. Tests: 27 (RideMeterTest 19, SettingsActivityTest 6, ZonesTest 2).
+- To check on the device: light/dark switch while the field is on screen; distance to finish on a route; the update
+  via the companion app (sharing the 1.2.0 link) keeps settings and fields.
 
 ## Origin
 

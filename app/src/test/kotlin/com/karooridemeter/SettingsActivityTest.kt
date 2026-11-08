@@ -57,4 +57,26 @@ class SettingsActivityTest {
             RideSettings.rideSlots(context),
         )
     }
+
+    @Test
+    fun statusSpotsDefaultAndSaveChoice() {
+        assertEquals(StatusValue.SHIFT_BATTERY, RideSettings.statusLeft(context))
+        assertEquals(StatusValue.GEAR, RideSettings.statusRight(context))
+        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        assertEquals(StatusValue.GEAR.ordinal, activity.statusRightSpinner.selectedItemPosition)
+        activity.statusLeftSpinner.setSelection(StatusValue.TEMPERATURE.ordinal)
+        activity.statusRightSpinner.setSelection(StatusValue.NONE.ordinal)
+        ShadowLooper.idleMainLooper()
+        assertEquals(StatusValue.TEMPERATURE, RideSettings.statusLeft(context))
+        assertEquals(StatusValue.NONE, RideSettings.statusRight(context))
+    }
+
+    @Test
+    fun darkColorsDefaultToNormalAndSaveChoice() {
+        assertEquals(false, RideSettings.darkBrightColors(context))
+        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        assertTrue(activity.darkColorButtons.getValue(false).isChecked)
+        activity.darkColorButtons.getValue(true).performClick()
+        assertEquals(true, RideSettings.darkBrightColors(context))
+    }
 }

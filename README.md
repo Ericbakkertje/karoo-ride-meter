@@ -4,16 +4,19 @@ A combined graphical data field for the Hammerhead Karoo 3 (also reported workin
 [`io.hammerhead:karoo-ext`](https://github.com/hammerheadnav/karoo-ext) SDK (1.1.9):
 
 - speed on a 270° dial face with numbers and a red pointer,
-- a status row on top: shifting battery on the left (SRAM AXS level from the Karoo, or Shimano Di2 % from the
-  [Ki2](https://github.com/valterc/ki2) extension) and the gear (front / rear teeth) on the right,
+- two spots above the dial, chosen in Settings: by default the shifting battery on the left (SRAM AXS level from
+  the Karoo, or Shimano Di2 % from the [Ki2](https://github.com/valterc/ki2) extension) and the gear (front / rear
+  teeth) on the right; or temperature, grade, altitude, elevation gain, distance to finish, or nothing
+  (for mechanical shifting; with both set to nothing the dial moves up),
 - distance or average speed under the speed (your choice),
-- three round fields you choose in "Ride Meter Settings" (slope, cadence, power, HR, …), coloured by your zones.
+- three round fields you choose in "Ride Meter Settings" (slope, cadence, power, HR, …), coloured by your zones,
+- follows the Karoo's light or dark mode (light mode uses stronger colours; dark mode can use them too).
 
-| Full page | Average speed under the speed | Half page |
+| Full page | Light mode | Half page |
 |---|---|---|
-| ![Ride Meter, full page](docs/ride_meter_cadence_hr_power3s_478x721.png) | ![Ride Meter with average speed](docs/ride_meter_avg_speed_478x721.png) | ![Ride Meter, half page](docs/ride_meter_cadence_hr_power3s_478x456.png) |
+| ![Ride Meter, full page](docs/ride_meter_cadence_hr_power3s_478x721.png) | ![Ride Meter in light mode](docs/ride_meter_light_478x721.png) | ![Ride Meter, half page](docs/ride_meter_cadence_hr_power3s_478x456.png) |
 
-_Rendered by the app's own drawing code (version 1.1.2) with example values._
+_Rendered by the app's own drawing code (version 1.2.0) with example values._
 
 Split off from Karoo Graphic Meter. Status: see `PROJECT_STATUS.md`. Testers: see `TESTERS.md`.
 

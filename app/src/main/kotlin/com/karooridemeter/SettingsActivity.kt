@@ -14,7 +14,8 @@ import android.widget.Spinner
 import android.widget.TextView
 
 /**
- * Settings screen: dial scale, the line under the speed and what the three round fields show.
+ * Settings screen: dial scale, the line under the speed, the spots above the dial, dark-mode colours
+ * and what the three round fields show.
  * Choices are saved immediately; an open Ride Meter updates within a second.
  */
 class SettingsActivity : Activity() {
@@ -27,6 +28,13 @@ class SettingsActivity : Activity() {
 
     /** Field index -> its dropdown. Internal for tests. */
     internal val slotSpinners = mutableListOf<Spinner>()
+
+    /** Top-left and top-right dropdowns. Internal for tests. */
+    internal lateinit var statusLeftSpinner: Spinner
+    internal lateinit var statusRightSpinner: Spinner
+
+    /** Dark-mode colours: false = normal, true = bright -> its radio button. Internal for tests. */
+    internal val darkColorButtons = linkedMapOf<Boolean, RadioButton>()
 
     private val density get() = resources.displayMetrics.density
     private val pad get() = (16 * density).toInt()
@@ -82,6 +90,35 @@ class SettingsActivity : Activity() {
         }
         root.addView(under)
 
+        // Spots above the dial
+        root.addView(sectionTitle(R.string.settings_status))
+        root.addView(label(R.string.settings_status_left))
+        statusLeftSpinner = statusSpinner(RideSettings.statusLeft(this)) { RideSettings.setStatusLeft(this, it) }
+        root.addView(statusLeftSpinner)
+        root.addView(label(R.string.settings_status_right))
+        statusRightSpinner = statusSpinner(RideSettings.statusRight(this)) { RideSettings.setStatusRight(this, it) }
+        root.addView(statusRightSpinner)
+
+        // Colours
+        root.addView(sectionTitle(R.string.settings_dark_colors))
+        val colors = RadioGroup(this)
+        listOf(false to R.string.settings_dark_colors_normal, true to R.string.settings_dark_colors_bright).forEach { (bright, res) ->
+            val button = RadioButton(this).apply {
+                id = View.generateViewId()
+                text = getString(res)
+                textSize = 18f
+                minHeight = (48 * density).toInt()
+            }
+            colors.addView(button)
+            darkColorButtons[bright] = button
+        }
+        darkColorButtons[RideSettings.darkBrightColors(this)]?.let { colors.check(it.id) }
+        colors.setOnCheckedChangeListener { _, checkedId ->
+            darkColorButtons.entries.firstOrNull { it.value.id == checkedId }?.let { RideSettings.setDarkBrightColors(this, it.key) }
+        }
+        root.addView(colors)
+        root.addView(TextView(this).apply { text = getString(R.string.settings_light_note) })
+
         // Round fields
         root.addView(sectionTitle(R.string.settings_ride_boxes))
         val current = RideSettings.rideSlots(this)
@@ -123,6 +160,29 @@ class SettingsActivity : Activity() {
         }
         slotSpinners += spinner
         return spinner
+    }
+
+    private fun label(textRes: Int) = TextView(this).apply {
+        text = getString(textRes)
+        textSize = 16f
+        setPadding(0, pad / 2, 0, 0)
+    }
+
+    private fun statusSpinner(selected: StatusValue, save: (StatusValue) -> Unit): Spinner {
+        val options = StatusValue.entries
+        return Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@SettingsActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                options.map { it.settingsName },
+            )
+            setSelection(options.indexOf(selected), false)
+            minimumHeight = (48 * density).toInt()
+            onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) = save(options[position])
+                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+            }
+        }
     }
 
     private fun sectionTitle(textRes: Int) = TextView(this).apply {

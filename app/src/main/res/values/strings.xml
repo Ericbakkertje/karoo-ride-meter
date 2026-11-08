@@ -3,12 +3,19 @@
     <string name="app_name">Karoo Ride Meter</string>
     <string name="extension_name">Ride Meter</string>
     <string name="ride_meter_name">Ride Meter</string>
-    <string name="ride_meter_description">Speed on a dial with numbers, plus gear, distance and shifting battery (SRAM AXS, or Shimano Di2 via Ki2), and three round fields you choose in Settings (default slope, time of day, cadence). Best in a large field.</string>
+    <string name="ride_meter_description">Speed on a dial with numbers, plus distance or average speed, two spots above the dial (default: shifting battery and gear; SRAM AXS, or Shimano Di2 via Ki2), and three round fields you choose in Settings. Follows the Karoo light or dark mode. Best in a large field.</string>
 
     <string name="settings_title">Ride Meter Settings</string>
     <string name="settings_speed_scale">Dial scale</string>
     <string name="settings_scale_option">0–%1$d km/h (numbers every %2$d)</string>
     <string name="settings_under_speed">Under the speed</string>
+    <string name="settings_status">Above the dial</string>
+    <string name="settings_status_left">Top left</string>
+    <string name="settings_status_right">Top right</string>
+    <string name="settings_dark_colors">Colours in dark mode</string>
+    <string name="settings_dark_colors_normal">Normal (neon)</string>
+    <string name="settings_dark_colors_bright">Bright (stronger colours)</string>
+    <string name="settings_light_note">The meter follows the Karoo light or dark mode. Light mode always uses the bright colours.</string>
     <string name="settings_ride_boxes">Round fields</string>
     <string name="settings_ride_box_1">Field 1 (left; top in a wide field)</string>
     <string name="settings_ride_box_2">Field 2 (middle)</string>

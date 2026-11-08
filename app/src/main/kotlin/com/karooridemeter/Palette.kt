@@ -41,3 +41,44 @@ object GaugePalette {
     }
 }
 
+
+/**
+ * Colours for one Ride Meter frame. Dark (the default) follows [GaugePalette]; light is a light-grey card with
+ * dark text. Light mode always uses the bright ring colours, which stay readable on a light background;
+ * dark mode uses them only when chosen in Settings.
+ */
+data class RideTheme(val light: Boolean = false, val brightColors: Boolean = false) {
+    val bright: Boolean get() = light || brightColors
+
+    val background: Int get() = if (light) 0xFFF4F6FA.toInt() else GaugePalette.BACKGROUND
+    val text: Int get() = if (light) 0xFF0B1020.toInt() else GaugePalette.TEXT
+    val textSecondary: Int get() = if (light) 0xFF3D4A5C.toInt() else GaugePalette.TEXT_SECONDARY
+    val needle: Int get() = if (light) 0xFFE0221A.toInt() else 0xFFFF3B30.toInt()
+    val tickLit: Int get() = if (light) 0xFF0B1020.toInt() else 0xFFFFFFFF.toInt()
+    val tickDim: Int get() = if (light) 0xFFB4BECE.toInt() else 0xFF5B6B85.toInt()
+    val ring: Int get() = if (light) 0xFFC5CEDC.toInt() else 0xFF33415C.toInt()
+
+    /** A zone colour as drawn in this theme: the bright variant when [bright]; grey for "no value" in light mode. */
+    fun color(c: Int): Int {
+        if (c == RideGauge.NEUTRAL) return if (light) LIGHT_NEUTRAL else c
+        if (!bright) return c
+        val i = GaugePalette.ZONES.indexOf(c)
+        return if (i >= 0) BRIGHT_ZONES[i] else c
+    }
+
+    companion object {
+        val DARK = RideTheme()
+        const val LIGHT_NEUTRAL = 0xFFB4BECE.toInt()
+
+        /** Deeper, more saturated versions of [GaugePalette.ZONES] (same order). */
+        val BRIGHT_ZONES = intArrayOf(
+            0xFF0057E0.toInt(), // 1 blue
+            0xFF00A896.toInt(), // 2 turquoise
+            0xFF008FD0.toInt(), // 3 light blue
+            0xFFF0A500.toInt(), // 4 amber
+            0xFFE6007E.toInt(), // 5 magenta
+            0xFFD9002B.toInt(), // 6 red
+            0xFF7B2FF0.toInt(), // 7 purple
+        )
+    }
+}

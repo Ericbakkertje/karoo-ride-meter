@@ -8,6 +8,9 @@ object RideSettings {
     private const val KEY_SCALE_MAX = "speed_scale_max_kmh"
     private const val KEY_SLOT = "ride_slot_"
     private const val KEY_UNDER_SPEED = "under_speed"
+    private const val KEY_STATUS_LEFT = "status_left"
+    private const val KEY_STATUS_RIGHT = "status_right"
+    private const val KEY_DARK_BRIGHT = "dark_bright_colors"
 
     /** Dial scale: each option ends on a numbered tick (see RideRenderer.tickSteps). */
     const val DEFAULT_SCALE_MAX_KMH = 60
@@ -38,6 +41,28 @@ object RideSettings {
 
     fun setUnderSpeed(context: Context, value: UnderSpeed) {
         prefs(context).edit().putString(KEY_UNDER_SPEED, value.name).apply()
+    }
+
+    /** What the spots above the dial show (top-left, top-right). */
+    fun statusLeft(context: Context): StatusValue =
+        StatusValue.fromName(prefs(context).getString(KEY_STATUS_LEFT, null), StatusValue.DEFAULT_LEFT)
+
+    fun statusRight(context: Context): StatusValue =
+        StatusValue.fromName(prefs(context).getString(KEY_STATUS_RIGHT, null), StatusValue.DEFAULT_RIGHT)
+
+    fun setStatusLeft(context: Context, value: StatusValue) {
+        prefs(context).edit().putString(KEY_STATUS_LEFT, value.name).apply()
+    }
+
+    fun setStatusRight(context: Context, value: StatusValue) {
+        prefs(context).edit().putString(KEY_STATUS_RIGHT, value.name).apply()
+    }
+
+    /** Bright ring colours in dark mode (light mode always uses them). Default: the normal neon colours. */
+    fun darkBrightColors(context: Context): Boolean = prefs(context).getBoolean(KEY_DARK_BRIGHT, false)
+
+    fun setDarkBrightColors(context: Context, bright: Boolean) {
+        prefs(context).edit().putBoolean(KEY_DARK_BRIGHT, bright).apply()
     }
 
     private fun prefs(context: Context) =

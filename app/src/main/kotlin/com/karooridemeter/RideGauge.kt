@@ -8,12 +8,13 @@ import kotlin.math.roundToInt
  * SDK BatteryStatus mapping: NEW > 95 %, GOOD 81-95, OK 46-80, LOW 16-45, CRITICAL <= 15.
  * [fill] is how full the battery icon is drawn.
  */
-enum class DrivetrainBattery(val fill: Float, val color: Int) {
-    NEW(1.0f, GaugePalette.ZONES[1]),
-    GOOD(0.85f, GaugePalette.ZONES[1]),
-    OK(0.6f, GaugePalette.ZONES[3]),
-    LOW(0.3f, GaugePalette.ZONES[4]),
-    CRITICAL(0.1f, GaugePalette.ZONES[5]),
+enum class DrivetrainBattery(val fill: Float, val color: Int, val label: String) {
+    /** The SDK calls this level NEW; on screen it is FULL (the battery is full, not new). */
+    NEW(1.0f, GaugePalette.ZONES[1], "FULL"),
+    GOOD(0.85f, GaugePalette.ZONES[1], "GOOD"),
+    OK(0.6f, GaugePalette.ZONES[3], "OK"),
+    LOW(0.3f, GaugePalette.ZONES[4], "LOW"),
+    CRITICAL(0.1f, GaugePalette.ZONES[5], "CRITICAL"),
     ;
 
     companion object {
@@ -55,8 +56,8 @@ data class ShiftBattery(
 ) {
     /** How full the icon is drawn. */
     val fill: Float get() = percent?.let { it.coerceIn(0, 100) / 100f } ?: level.fill
-    /** Text after the system name: "87%" or the level name. */
-    val text: String get() = percent?.let { "$it%" } ?: level.name
+    /** Text after the system name: "87%" or the level label ("FULL", "GOOD", ...). */
+    val text: String get() = percent?.let { "$it%" } ?: level.label
 
     companion object {
         /** From the Karoo SHIFTING_BATTERY stream (SRAM AXS). */
@@ -119,6 +120,31 @@ enum class UnderSpeed(val settingsName: String) {
     }
 }
 
+/** What the top-left and top-right spots above the dial show. Chosen in Settings. */
+enum class StatusValue(val settingsName: String) {
+    SHIFT_BATTERY("Shifting battery (AXS / Di2)"),
+    GEAR("Gear (52 / 17)"),
+    TEMPERATURE("Temperature (°C)"),
+    GRADE("Grade (%)"),
+    ALTITUDE("Altitude (m)"),
+    CLIMB("Elevation gain (m)"),
+    TO_FINISH("Distance to finish (km, on a route)"),
+    NONE("Nothing"),
+    ;
+
+    companion object {
+        val DEFAULT_LEFT = SHIFT_BATTERY
+        val DEFAULT_RIGHT = GEAR
+        fun fromName(name: String?, fallback: StatusValue) = entries.firstOrNull { it.name == name } ?: fallback
+    }
+}
+
+/** One spot in the status row: the battery block, or a value with a small label under it. */
+sealed class StatusItem {
+    data class Battery(val battery: ShiftBattery?) : StatusItem()
+    data class Value(val text: String, val label: String, val known: Boolean) : StatusItem()
+}
+
 /** What a Ride Meter box can show. Chosen per box in Settings; [label] is drawn in the box. */
 enum class RideSlotValue(val label: String, val settingsName: String) {
     SLOPE("SLOPE %", "Slope %"),
@@ -162,6 +188,15 @@ data class RideState(
     val underSpeed: UnderSpeed = UnderSpeed.DEFAULT,
     /** What the three boxes show (top/left first). */
     val slots: List<RideSlotValue> = RideSlotValue.DEFAULTS,
+    /** What the spots above the dial show. */
+    val statusLeft: StatusValue = StatusValue.DEFAULT_LEFT,
+    val statusRight: StatusValue = StatusValue.DEFAULT_RIGHT,
+    /** Karoo in light mode (light card, always the bright colours). */
+    val light: Boolean = false,
+    /** Bright ring colours in dark mode (chosen in Settings). */
+    val brightColors: Boolean = false,
+    val altitudeM: Double? = null,
+    val toFinishKm: Double? = null,
     val gradePct: Double? = null,
     val cadenceRpm: Int? = null,
     val heartRate: Int? = null,
@@ -199,6 +234,10 @@ data class RideModel(
     /** The three boxes, top/left first. */
     val slots: List<RideSlot>,
     val shiftBattery: ShiftBattery?,
+    /** Top-left and top-right spots; null = empty. Both null = no status row (the dial moves up). */
+    val statusLeft: StatusItem? = StatusItem.Battery(shiftBattery),
+    val statusRight: StatusItem? = null,
+    val theme: RideTheme = RideTheme.DARK,
 )
 
 /** Turns raw ride values into a [RideModel]. Pure Kotlin, unit-tested on the Mac. */
@@ -221,7 +260,26 @@ object RideGauge {
             underSpeedLabel = if (s.underSpeed == UnderSpeed.AVG_SPEED) "AVG" else null,
             slots = s.slots.take(3).map { slot(it, s) },
             shiftBattery = s.shiftBattery,
+            statusLeft = status(s.statusLeft, s),
+            statusRight = status(s.statusRight, s),
+            theme = RideTheme(light = s.light, brightColors = s.brightColors),
         )
+    }
+
+    fun status(v: StatusValue, s: RideState): StatusItem? {
+        fun value(text: String?, label: String) = StatusItem.Value(text ?: "--", label, text != null)
+        return when (v) {
+            StatusValue.SHIFT_BATTERY -> StatusItem.Battery(s.shiftBattery)
+            StatusValue.GEAR -> StatusItem.Value(
+                "${s.frontTeeth ?: "--"} / ${s.rearTeeth ?: "--"}", "GEAR", s.frontTeeth != null && s.rearTeeth != null,
+            )
+            StatusValue.TEMPERATURE -> value(s.temperatureC?.let { oneDecimal(it) }, "TEMP °C")
+            StatusValue.GRADE -> value(s.gradePct?.let { oneDecimal(it) }, "GRADE %")
+            StatusValue.ALTITUDE -> value(s.altitudeM?.roundToInt()?.toString(), "ALT m")
+            StatusValue.CLIMB -> value(s.climbM?.roundToInt()?.toString(), "CLIMB m")
+            StatusValue.TO_FINISH -> value(s.toFinishKm?.let { oneDecimal(it) }, "TO FINISH km")
+            StatusValue.NONE -> null
+        }
     }
 
     fun slot(v: RideSlotValue, s: RideState): RideSlot {

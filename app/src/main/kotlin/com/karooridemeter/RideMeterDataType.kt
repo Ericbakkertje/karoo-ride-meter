@@ -1,6 +1,8 @@
 package com.karooridemeter
 
+import android.app.UiModeManager
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.util.Log
 import io.hammerhead.karooext.KarooSystemService
@@ -92,6 +94,9 @@ class RideMeterDataType(
                 DataType.Type.ELEVATION_GAIN to DataType.Field.ELEVATION_GAIN,
                 DataType.Type.TEMPERATURE to DataType.Field.TEMPERATURE,
                 DataType.Type.CALORIES to DataType.Field.CALORIES,
+                // Extra values for the spots above the dial.
+                DataType.Type.PRESSURE_ELEVATION_CORRECTION to DataType.Field.PRESSURE_ELEVATION,
+                DataType.Type.DISTANCE_TO_DESTINATION to DataType.Field.DISTANCE_TO_DESTINATION,
             ),
             wantsProfile = true,
             render = { m, w, h -> RideRenderer.render(m, w, h, Bitmap.Config.RGB_565) },
@@ -122,6 +127,13 @@ class RideMeterDataType(
                     // Read on every frame so a Settings change applies straight away.
                     slots = RideSettings.rideSlots(appContext),
                     underSpeed = RideSettings.underSpeed(appContext),
+                    statusLeft = RideSettings.statusLeft(appContext),
+                    statusRight = RideSettings.statusRight(appContext),
+                    light = isLightMode(appContext),
+                    brightColors = RideSettings.darkBrightColors(appContext),
+                    altitudeM = values[DataType.Type.PRESSURE_ELEVATION_CORRECTION],
+                    // Assumed metres, like DISTANCE; only streams while following a route.
+                    toFinishKm = values[DataType.Type.DISTANCE_TO_DESTINATION]?.let { (it / 1000.0).coerceAtLeast(0.0) },
                     heartRate = int(DataType.Type.HEART_RATE),
                     power = int(DataType.Type.POWER),
                     power3s = int(DataType.Type.SMOOTHED_3S_AVERAGE_POWER),
@@ -142,6 +154,19 @@ class RideMeterDataType(
         emitter.setCancellable {
             Log.d(RideMeterExtension.TAG, "Ride view stopped")
             session.stop()
+        }
+    }
+
+    /**
+     * True when the Karoo is in light mode. The Karoo sets the system night mode when the rider switches
+     * between dark and light (checked on the device: "Night mode: yes" in dark, "no" in light).
+     */
+    private fun isLightMode(context: Context): Boolean {
+        val ui = context.getSystemService(UiModeManager::class.java)
+        return when (ui?.nightMode) {
+            UiModeManager.MODE_NIGHT_YES -> false
+            UiModeManager.MODE_NIGHT_NO -> true
+            else -> (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_NO
         }
     }
 

@@ -288,6 +288,51 @@ class RideMeterTest {
         }
     }
 
+    @Test
+    fun axsFullAndStatusSpots() {
+        assertEquals("FULL", ShiftBattery.axs(0.0)!!.text)
+        assertEquals("CRITICAL", ShiftBattery.axs(4.0)!!.text)
+        val m = RideGauge.model(state())
+        assertEquals(StatusItem.Battery(ShiftBattery("AXS", DrivetrainBattery.GOOD)), m.statusLeft)
+        assertEquals(StatusItem.Value("40 / 15", "GEAR", true), m.statusRight)
+        val other = RideGauge.model(
+            state().copy(statusLeft = StatusValue.TEMPERATURE, statusRight = StatusValue.TO_FINISH, temperatureC = 12.34),
+        )
+        assertEquals(StatusItem.Value("12.3", "TEMP °C", true), other.statusLeft)
+        assertEquals(StatusItem.Value("--", "TO FINISH km", false), other.statusRight)
+        val none = RideGauge.model(state().copy(statusLeft = StatusValue.NONE, statusRight = StatusValue.NONE))
+        assertNull(none.statusLeft)
+        assertNull(none.statusRight)
+    }
+
+    @Test
+    fun withoutStatusRowTheDialMovesUp() {
+        for ((w, h) in sizes) {
+            val with = RideRenderer.layout(w, h)
+            val without = RideRenderer.layout(w, h, statusRow = false)
+            assertTrue("$w x $h dial not lower", without.cy - without.radius <= with.cy - with.radius + 0.5f)
+            assertTrue("$w x $h dial inside", without.cy - without.radius >= 0f && without.cy + without.radius * 0.7072f <= h)
+        }
+    }
+
+    @Test
+    fun lightModeUsesLightCardAndBrightColors() {
+        val (w, h) = 478 to 721
+        val l = RideRenderer.layout(w, h)
+        val m = RideGauge.model(state().copy(light = true))
+        assertEquals(RideTheme(light = true), m.theme)
+        val bmp = RideRenderer.render(m, w, h, Bitmap.Config.ARGB_8888)
+        assertNear("light background", m.theme.background, bmp.getPixel(2, h - 2))
+        val f = l.fields[2]
+        val border = maxOf(2.5f, f.diameter * 0.045f)
+        // Field 3 is cadence 88 rpm: turquoise, drawn in its bright variant.
+        assertNear("bright ring", RideTheme.BRIGHT_ZONES[1], bmp.getPixel((f.cx - f.diameter / 2f + border / 2f).toInt(), f.cy.toInt()))
+        // Dark mode keeps the neon colours unless bright is chosen.
+        assertEquals(GaugePalette.ZONES[1], RideTheme.DARK.color(GaugePalette.ZONES[1]))
+        assertEquals(RideTheme.BRIGHT_ZONES[1], RideTheme(brightColors = true).color(GaugePalette.ZONES[1]))
+        File(outDir, "ride_light_478x721.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
     private fun assertNear(label: String, expected: Int, actual: Int) {
         val d = abs(Color.red(expected) - Color.red(actual)) + abs(Color.green(expected) - Color.green(actual)) +
             abs(Color.blue(expected) - Color.blue(actual))
