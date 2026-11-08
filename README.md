@@ -1,6 +1,6 @@
 # Karoo Ride Meter
 
-A combined graphical data field for the Hammerhead Karoo 3, built on the official
+A combined graphical data field for the Hammerhead Karoo 3 (also reported working on the Karoo 2), built on the official
 [`io.hammerhead:karoo-ext`](https://github.com/hammerheadnav/karoo-ext) SDK (1.1.9):
 
 - speed on a 270° dial face with numbers and a red pointer,
@@ -43,7 +43,7 @@ JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ./gradl
 
 APK: `app/build/outputs/apk/release/app-release.apk`. Tester notes: `TESTERS.md`.
 
-## Install on Karoo 3
+## Install on the Karoo
 
 ```bash
 adb install -r app/build/outputs/apk/debug/app-debug.apk

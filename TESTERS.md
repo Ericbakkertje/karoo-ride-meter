@@ -1,6 +1,6 @@
 # Karoo Ride Meter — testversie 1.1.2
 
-Een grafisch dataveld voor de Hammerhead Karoo 3: snelheid op een wijzerplaat met cijfers,
+Een grafisch dataveld voor de Hammerhead Karoo 3 (werkt volgens een tester ook op de Karoo 2; niet op de Karoo 1): snelheid op een wijzerplaat met cijfers,
 versnelling en accu van de elektronische schakeling (SRAM AXS, of Shimano Di2 via Ki2),
 afstand of gemiddelde snelheid, en drie ronde velden naar keuze.
 

@@ -11,7 +11,7 @@ _Last updated: 2026-11-07 — 1.1.2: full-page layout moved up (release build on
 | Extension ID | `karoo-ride-meter` (field typeId `ride-meter`) |
 | Hammerhead SDK | `io.hammerhead:karoo-ext:1.1.9` |
 | Toolchain | Kotlin 2.0.0, Android Gradle Plugin 8.5.2, Gradle 8.8 (wrapper), JDK 17 |
-| Android | compileSdk/targetSdk 34, minSdk 23 (Karoo 3 runs Android 12L, API 32) |
+| Android | compileSdk/targetSdk 34, minSdk 23 (Karoo 3 runs Android 12L, API 32; Karoo 2 confirmed working by a tester) |
 
 ## Origin
 
@@ -182,6 +182,13 @@ Rendering tests use Robolectric native graphics (real `android.graphics` on the 
   `SHIFTING_BATTERY_STATUS` 1 (GOOD), gear 52 T front (2/2), 17 T rear (6/12), HR avg/max 83 (HR strap on this time).
 - FIT: 1 min moving, 0.24 km, avg 13.2 km/h, cadence avg 39 / max 53 rpm, grade −0.9 … +1.8 %, altitude 0.2–0.8 m.
 - On-screen values during the ride were not checked (only first values are logged; the screen was not captured).
+
+## User reports 2026-11-08
+
+- **50 km ride with 1.1.2 (release) on the developer's Karoo 3: no problems** (reported by the user; logs not checked).
+- **Karoo 2: confirmed working** by a tester (reported to the user; not seen by us, details unknown).
+- Karoo 1 cannot run karoo-ext extensions, so it is not supported.
+- GitHub release v1.1.2: 22 APK downloads on 2026-11-08 (`python3 tools/downloads.py`; 1 was our own test download).
 
 ## Next steps
 
