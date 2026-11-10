@@ -3,12 +3,21 @@
     <string name="app_name">Karoo Ride Meter</string>
     <string name="extension_name">Ride Meter</string>
     <string name="ride_meter_name">Ride Meter</string>
-    <string name="ride_meter_description">Speed on a dial with numbers, plus distance or average speed, two spots above the dial (default: shifting battery and gear; SRAM AXS, or Shimano Di2 via Ki2), and three round fields you choose in Settings. Follows the Karoo light or dark mode. Best in a large field.</string>
+    <string name="ride_meter_description">Speed on a dial with numbers, plus distance or average speed, two spots above the dial (default: shifting battery and gear; SRAM AXS, or Shimano Di2 via Ki2), and three round fields you choose in Settings. Follows the Karoo light or dark mode and units. Best in a large field.</string>
+    <string name="ride_meter_power_name">Ride Meter Power</string>
+    <string name="ride_meter_power_description">The Ride Meter with power (W) on the dial and average power under it. The scale follows your FTP. Speed moves to the first round field.</string>
+    <string name="ride_meter_power_3s_name">Ride Meter Power 3s</string>
+    <string name="ride_meter_power_3s_description">The Ride Meter with 3-second average power (W) on the dial and average power under it. The scale follows your FTP. Speed moves to the first round field.</string>
+    <string name="ride_meter_heart_rate_name">Ride Meter Heart Rate</string>
+    <string name="ride_meter_heart_rate_description">The Ride Meter with heart rate (60–200 bpm) on the dial and average heart rate under it. Speed moves to the first round field.</string>
+    <string name="ride_meter_cadence_name">Ride Meter Cadence</string>
+    <string name="ride_meter_cadence_description">The Ride Meter with cadence (0–140 rpm) on the dial and average cadence under it. Speed moves to the first round field.</string>
 
     <string name="settings_title">Ride Meter Settings</string>
-    <string name="settings_speed_scale">Dial scale</string>
+    <string name="settings_speed_scale">Speed scale</string>
+    <string name="settings_scale_imperial_note">With imperial units on the Karoo the scale is 0–20, 30, 40 or 60 mph. Power, heart rate and cadence fields set their own scale.</string>
     <string name="settings_scale_option">0–%1$d km/h (numbers every %2$d)</string>
-    <string name="settings_under_speed">Under the speed</string>
+    <string name="settings_under_speed">Under the speed (speed field)</string>
     <string name="settings_status">Above the dial</string>
     <string name="settings_status_left">Top left</string>
     <string name="settings_status_right">Top right</string>
@@ -20,5 +29,6 @@
     <string name="settings_ride_box_1">Field 1 (left; top in a wide field)</string>
     <string name="settings_ride_box_2">Field 2 (middle)</string>
     <string name="settings_ride_box_3">Field 3 (right; bottom in a wide field)</string>
+    <string name="settings_ride_boxes_note">In the Power, Heart Rate and Cadence versions of the Ride Meter, field 1 shows speed and the other two show your choices without the value already on the dial.</string>
     <string name="settings_note">Saved immediately. An open Ride Meter updates within a second.</string>
 </resources>

@@ -52,7 +52,7 @@ class RideMeterTest {
             m.slots,
         )
         assertEquals(28.4f / 60f, m.position!!, 0.0001f)
-        assertEquals(60, m.scaleMaxKmh)
+        assertEquals(60, m.scaleMax)
         assertEquals(ShiftBattery("AXS", DrivetrainBattery.GOOD), m.shiftBattery)
     }
 
@@ -212,6 +212,133 @@ class RideMeterTest {
             assertEquals("scale $max ends on a numbered tick", 0, max % major)
             assertEquals(0, major % minor)
         }
+    }
+
+    @Test
+    fun tickStepsForPowerHeartRateAndCadenceScales() {
+        assertEquals(20 to 5, RideRenderer.tickSteps(140)) // cadence 0-140, heart rate 60-200
+        assertEquals(50 to 10, RideRenderer.tickSteps(400))
+        assertEquals(100 to 20, RideRenderer.tickSteps(800))
+        assertEquals(5 to 1, RideRenderer.tickSteps(40)) // 0-40 mph
+    }
+
+    @Test
+    fun powerHeartRateAndCadenceDials() {
+        val s = state().copy(
+            power = 245, power3s = 230, avgPower = 212, heartRate = 150, avgHeartRate = 138, avgCadence = 84,
+            slots = listOf(RideSlotValue.CADENCE, RideSlotValue.HEART_RATE, RideSlotValue.POWER_3S),
+        )
+        val pw = RideGauge.model(s.copy(dial = DialValue.POWER, ftp = 199))
+        assertEquals("245", pw.speedText)
+        assertEquals("watt", pw.unit)
+        assertEquals(0 to 400, pw.scaleMin to pw.scaleMax)
+        assertEquals(245f / 400f, pw.position!!, 0.0001f)
+        assertEquals("212" to "AVG", pw.underSpeedText to pw.underSpeedLabel)
+        // Speed takes field 1; the other two keep the choices (power 3s stays: it is not this dial's value).
+        assertEquals(listOf("SPEED", "CADENCE", "HR"), pw.slots.map { it.label })
+        assertEquals("28.4", pw.slots[0].value)
+
+        val p3 = RideGauge.model(s.copy(dial = DialValue.POWER_3S))
+        assertEquals("230", p3.speedText)
+        assertEquals(RideGauge.DEFAULT_POWER_SCALE, p3.scaleMax)
+        assertEquals(listOf("SPEED", "CADENCE", "HR"), p3.slots.map { it.label })
+
+        val hr = RideGauge.model(s.copy(dial = DialValue.HEART_RATE, maxHr = 182))
+        assertEquals("150" to "bpm", hr.speedText to hr.unit)
+        assertEquals(60 to 200, hr.scaleMin to hr.scaleMax)
+        assertEquals(90f / 140f, hr.position!!, 0.0001f)
+        assertEquals("138", hr.underSpeedText)
+        assertEquals(listOf("SPEED", "CADENCE", "POWER 3s"), hr.slots.map { it.label })
+        // Below 60 bpm the needle rests at the start; a high max HR widens the scale.
+        assertEquals(0f, RideGauge.model(s.copy(dial = DialValue.HEART_RATE, heartRate = 50)).position!!, 0f)
+        assertEquals(220, RideGauge.model(s.copy(dial = DialValue.HEART_RATE, maxHr = 205)).scaleMax)
+
+        val cd = RideGauge.model(s.copy(dial = DialValue.CADENCE))
+        assertEquals("88" to "rpm", cd.speedText to cd.unit)
+        assertEquals(0 to 140, cd.scaleMin to cd.scaleMax)
+        assertEquals("84", cd.underSpeedText)
+        assertEquals(listOf("SPEED", "HR", "POWER 3s"), cd.slots.map { it.label })
+
+        // Power scale: twice the FTP rounded up to 100 W, between 300 and 1000.
+        assertEquals(600, RideGauge.scale(s.copy(dial = DialValue.POWER, ftp = 280)).second)
+        assertEquals(300, RideGauge.scale(s.copy(dial = DialValue.POWER, ftp = 100)).second)
+        assertEquals(1000, RideGauge.scale(s.copy(dial = DialValue.POWER, ftp = 600)).second)
+
+        // Every scale ends on a numbered tick.
+        for (m in listOf(pw, p3, hr, cd)) {
+            val (major, _) = RideRenderer.tickSteps(m.scaleMax - m.scaleMin)
+            assertEquals(0, m.scaleMin % major)
+            assertEquals(0, m.scaleMax % major)
+        }
+    }
+
+    @Test
+    fun imperialUnitsFollowTheKaroo() {
+        val s = state().copy(
+            units = Units.IMPERIAL, avgKmh = 32.0, temperatureC = 20.0, altitudeM = 100.0, climbM = 500.0, toFinishKm = 16.09344,
+            statusLeft = StatusValue.TEMPERATURE, statusRight = StatusValue.TO_FINISH,
+            slots = listOf(RideSlotValue.AVG_SPEED, RideSlotValue.CLIMB, RideSlotValue.DISTANCE),
+        )
+        val m = RideGauge.model(s)
+        assertEquals("17.6" to "mph", m.speedText to m.unit) // 28.4 km/h
+        assertEquals(40, m.scaleMax) // 60 km/h scale -> 40 mph
+        assertEquals(17.647f / 40f, m.position!!, 0.001f)
+        assertEquals("38.0 mi", m.underSpeedText) // 61.2 km
+        assertEquals(StatusItem.Value("68.0", "TEMP °F", true), m.statusLeft)
+        assertEquals(StatusItem.Value("10.0", "TO FINISH mi", true), m.statusRight)
+        assertEquals(
+            listOf(RideSlot("AVG mph", "19.9", RideGauge.NEUTRAL), RideSlot("CLIMB ft", "1640", RideGauge.NEUTRAL), RideSlot("DIST mi", "38.0", RideGauge.NEUTRAL)),
+            m.slots,
+        )
+        assertEquals(listOf(20, 30, 40, 60), RideSettings.SCALE_OPTIONS_KMH.map { Units.mphScale(it) })
+        // Mixed units: imperial distance, metric elevation and temperature.
+        val mixed = RideGauge.model(s.copy(units = Units(imperialDistance = true)))
+        assertEquals(StatusItem.Value("20.0", "TEMP °C", true), mixed.statusLeft)
+        assertEquals("CLIMB m", mixed.slots[1].label)
+    }
+
+    @Test
+    fun shiftingBatteryShowsTheBrandOfItsSensor() {
+        fun sensor(id: String, name: String?, maker: String?, enabled: Boolean = true, types: List<String> = listOf("TYPE_SHIFTING_BATTERY_ID")) =
+            ShiftingBrand.Sensor(id, name, maker, enabled, types)
+        val axs = sensor("ble-1", "RD", "SRAM")
+        val campa = sensor("ble-2", "Rear derailleur", "Campagnolo S.r.l.")
+        val hrm = sensor("ant-3", "HRM", "Garmin", types = listOf("TYPE_HEART_RATE_ID"))
+        // The sensor the value came from wins.
+        assertEquals("Campa", ShiftingBrand.label("ble-2", listOf(axs, campa, hrm)))
+        assertEquals("AXS", ShiftingBrand.label("ble-1", listOf(axs, campa, hrm)))
+        // Unknown source: the only shifting brand among the enabled sensors.
+        assertEquals("Campa", ShiftingBrand.label(null, listOf(campa, hrm)))
+        assertEquals("Campa", ShiftingBrand.label("", listOf(campa, axs.copy(enabled = false), hrm)))
+        // Two brands, a brand we do not know, or nothing known yet: neutral name.
+        assertEquals("Batt", ShiftingBrand.label(null, listOf(axs, campa)))
+        assertEquals("Batt", ShiftingBrand.label("x", listOf(sensor("x", "Shifter", "Acme"))))
+        assertEquals("Batt", ShiftingBrand.label(null, emptyList()))
+        // Brand from the name when the manufacturer is missing.
+        assertEquals("AXS", ShiftingBrand.label(null, listOf(sensor("y", "SRAM AXS RD", null))))
+        // The tracker shows the level with that name.
+        assertEquals(ShiftBattery("Campa", DrivetrainBattery.GOOD), ShiftBatteryTracker { 0L }.update(axsRaw = 1.0, di2Pct = null, system = "Campa"))
+        assertEquals("Campa GOOD", ShiftBattery("Campa", DrivetrainBattery.GOOD).let { "${it.system} ${it.text}" })
+    }
+
+    @Test
+    fun everyDialHasAFieldInExtensionInfo() {
+        val xml = File("src/main/res/xml/extension_info.xml").readText()
+        val typeIds = Regex("typeId=\"([^\"]+)\"").findAll(xml).map { it.groupValues[1] }.toList()
+        assertEquals(DialValue.entries.map { it.typeId }, typeIds)
+    }
+
+    @Test
+    fun heartRateDialLightsTicksFromSixty() {
+        val (w, h) = 478 to 721
+        val l = RideRenderer.layout(w, h)
+        val m = RideGauge.model(state().copy(dial = DialValue.HEART_RATE, heartRate = 150))
+        val bmp = RideRenderer.render(m, w, h, Bitmap.Config.ARGB_8888)
+        fun px(bpm: Int) = RideRenderer.pointAt(l, RideRenderer.angleFor((bpm - 60) / 140f), l.radius * (RideRenderer.MAJOR_INNER + RideRenderer.TICK_OUTER) / 2f)
+            .let { (x, y) -> bmp.getPixel(x.toInt(), y.toInt()) }
+        assertNear("60 bpm tick lit", RideRenderer.TICK_LIT, px(60))
+        assertNear("140 bpm tick lit", RideRenderer.TICK_LIT, px(140))
+        assertNear("180 bpm tick dim", RideRenderer.TICK_DIM, px(180))
     }
 
     @Test

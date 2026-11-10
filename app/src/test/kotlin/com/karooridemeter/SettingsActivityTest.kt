@@ -31,7 +31,7 @@ class SettingsActivityTest {
         val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
         activity.scaleButtons.getValue(90).performClick()
         assertEquals(90, RideSettings.scaleMaxKmh(context))
-        assertEquals(90, RideGauge.model(RideState(kmh = 30.0, scaleMaxKmh = RideSettings.scaleMaxKmh(context))).scaleMaxKmh)
+        assertEquals(90, RideGauge.model(RideState(kmh = 30.0, scaleMaxKmh = RideSettings.scaleMaxKmh(context))).scaleMax)
     }
 
     @Test

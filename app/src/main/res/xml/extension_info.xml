@@ -8,12 +8,41 @@
     mapLayer="false"
     fitFile="false">
 
-    <!-- Graphical field: RideMeterDataType.startView draws the dial face with round fields. -->
+    <!-- Graphical fields: RideMeterDataType.startView draws the dial face with round fields.
+         One field per DialValue (what the dial shows); typeIds must match DialValue.typeId. -->
     <DataType
         description="@string/ride_meter_description"
         displayName="@string/ride_meter_name"
         graphical="true"
         icon="@drawable/ic_ride_meter"
         typeId="ride-meter" />
+
+    <DataType
+        description="@string/ride_meter_power_description"
+        displayName="@string/ride_meter_power_name"
+        graphical="true"
+        icon="@drawable/ic_ride_meter"
+        typeId="ride-meter-power" />
+
+    <DataType
+        description="@string/ride_meter_power_3s_description"
+        displayName="@string/ride_meter_power_3s_name"
+        graphical="true"
+        icon="@drawable/ic_ride_meter"
+        typeId="ride-meter-power-3s" />
+
+    <DataType
+        description="@string/ride_meter_heart_rate_description"
+        displayName="@string/ride_meter_heart_rate_name"
+        graphical="true"
+        icon="@drawable/ic_ride_meter"
+        typeId="ride-meter-heart-rate" />
+
+    <DataType
+        description="@string/ride_meter_cadence_description"
+        displayName="@string/ride_meter_cadence_name"
+        graphical="true"
+        icon="@drawable/ic_ride_meter"
+        typeId="ride-meter-cadence" />
 
 </ExtensionInfo>

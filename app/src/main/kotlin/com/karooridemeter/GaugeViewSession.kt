@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.RemoteViews
 import io.hammerhead.karooext.KarooSystemService
 import io.hammerhead.karooext.internal.ViewEmitter
+import io.hammerhead.karooext.models.DataPoint
 import io.hammerhead.karooext.models.OnStreamState
 import io.hammerhead.karooext.models.StreamState
 import io.hammerhead.karooext.models.UpdateGraphicConfig
@@ -36,6 +37,8 @@ class GaugeViewSession<T : Any>(
     private val wantsProfile: Boolean,
     /** Draws one frame; default for the semicircle gauges is [GaugeRenderer.render]. */
     private val render: (model: T, width: Int, height: Int) -> Bitmap,
+    /** Called with every streamed data point (e.g. to note which sensor it came from). */
+    private val onPoint: ((typeId: String, point: DataPoint) -> Unit)? = null,
     private val buildModel: (values: Map<String, Double>, profile: UserProfile?) -> T,
 ) {
     private val values = ConcurrentHashMap<String, Double>()
@@ -57,9 +60,10 @@ class GaugeViewSession<T : Any>(
                 if (v != null) values[typeId] = v else values.remove(typeId)
                 // Every field of the data point is also kept as "typeId/fieldKey" (e.g. gear teeth).
                 point?.values?.forEach { (k, fv) -> values["$typeId/$k"] = fv }
+                if (point != null) onPoint?.invoke(typeId, point)
                 // Log the first raw values of each stream once, to check undocumented units on the device.
                 if (point != null && loggedTypes.add(typeId)) {
-                    Log.d(RideMeterExtension.TAG, "$name: first $typeId = ${point.values}")
+                    Log.d(RideMeterExtension.TAG, "$name: first $typeId = ${point.values} (source ${point.sourceId})")
                 }
             }
         }

@@ -6,13 +6,13 @@ import io.hammerhead.karooext.extension.KarooExtension
 
 /**
  * Karoo extension service for the Ride Meter. The Karoo system binds to it (see AndroidManifest.xml)
- * and asks [types] for the data field declared in res/xml/extension_info.xml.
+ * and asks [types] for the data fields declared in res/xml/extension_info.xml (one per [DialValue]).
  */
 class RideMeterExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSION_NAME) {
 
     private val karooSystem by lazy { KarooSystemService(applicationContext) }
 
-    override val types by lazy { listOf(RideMeterDataType(karooSystem, extension)) }
+    override val types by lazy { DialValue.entries.map { RideMeterDataType(karooSystem, extension, it) } }
 
     override fun onCreate() {
         super.onCreate()

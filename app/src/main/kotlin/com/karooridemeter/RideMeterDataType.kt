@@ -12,8 +12,10 @@ import io.hammerhead.karooext.internal.ViewEmitter
 import io.hammerhead.karooext.models.DataPoint
 import io.hammerhead.karooext.models.DataType
 import io.hammerhead.karooext.models.OnStreamState
+import io.hammerhead.karooext.models.SavedDevices
 import io.hammerhead.karooext.models.StreamState
 import io.hammerhead.karooext.models.UpdateGraphicConfig
+import io.hammerhead.karooext.models.UserProfile
 import io.hammerhead.karooext.models.ViewConfig
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -21,7 +23,8 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
- * Ride Meter data field (typeId "ride-meter", graphical="true").
+ * Ride Meter data fields (graphical="true"), one per [DialValue]: "ride-meter" (speed on the dial),
+ * "ride-meter-power", "ride-meter-power-3s", "ride-meter-heart-rate" and "ride-meter-cadence".
  *
  * Combined field: 270° dial face with numbers and a red pointer, speed, gear (front / rear teeth from
  * electronic shifting), distance and the shifting battery (SRAM AXS level from the Karoo, or Shimano Di2 %
@@ -35,17 +38,27 @@ import kotlin.math.roundToInt
 class RideMeterDataType(
     private val karooSystem: KarooSystemService,
     extension: String,
-) : DataTypeImpl(extension, TYPE_ID) {
+    private val dial: DialValue = DialValue.SPEED,
+) : DataTypeImpl(extension, dial.typeId) {
 
-    /** Passes the Karoo speed through as this field's numeric value. */
+    /** Karoo stream (and its field) behind the dial value. */
+    private val source: Pair<String, String> = when (dial) {
+        DialValue.SPEED -> DataType.Type.SPEED to DataType.Field.SPEED
+        DialValue.POWER -> DataType.Type.POWER to DataType.Field.POWER
+        DialValue.POWER_3S -> DataType.Type.SMOOTHED_3S_AVERAGE_POWER to DataType.Field.SMOOTHED_3S_AVERAGE_POWER
+        DialValue.HEART_RATE -> DataType.Type.HEART_RATE to DataType.Field.HEART_RATE
+        DialValue.CADENCE -> DataType.Type.CADENCE to DataType.Field.CADENCE
+    }
+
+    /** Passes the dial's Karoo value through as this field's numeric value. */
     override fun startStream(emitter: Emitter<StreamState>) {
         val consumerId = karooSystem.addConsumer(
-            OnStreamState.StartStreaming(DataType.Type.SPEED),
+            OnStreamState.StartStreaming(source.first),
         ) { event: OnStreamState ->
             val state = event.state
             emitter.onNext(
                 if (state is StreamState.Streaming) {
-                    val v = state.dataPoint.values[DataType.Field.SPEED] ?: state.dataPoint.singleValue
+                    val v = state.dataPoint.values[source.second] ?: state.dataPoint.singleValue
                     if (v == null) {
                         StreamState.NotAvailable
                     } else {
@@ -64,12 +77,12 @@ class RideMeterDataType(
         val appContext = context.applicationContext
         val clockFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
         val session = GaugeViewSession<RideModel>(
-            name = "Ride",
+            name = "Ride ${dial.name.lowercase()}",
             context = context,
             config = config,
             emitter = emitter,
             karooSystem = karooSystem,
-            graphicConfig = UpdateGraphicConfig(showHeader = false, formatDataTypeId = DataType.Type.SPEED),
+            graphicConfig = UpdateGraphicConfig(showHeader = false, formatDataTypeId = source.first),
             streams = mapOf(
                 DataType.Type.SPEED to DataType.Field.SPEED,
                 DataType.Type.DISTANCE to DataType.Field.DISTANCE,
@@ -97,9 +110,13 @@ class RideMeterDataType(
                 // Extra values for the spots above the dial.
                 DataType.Type.PRESSURE_ELEVATION_CORRECTION to DataType.Field.PRESSURE_ELEVATION,
                 DataType.Type.DISTANCE_TO_DESTINATION to DataType.Field.DISTANCE_TO_DESTINATION,
+                // Averages under a heart rate or cadence dial.
+                DataType.Type.AVERAGE_HR to DataType.Field.AVG_HR,
+                DataType.Type.AVERAGE_CADENCE to DataType.Field.AVERAGE_CADENCE,
             ),
             wantsProfile = true,
             render = { m, w, h -> RideRenderer.render(m, w, h, Bitmap.Config.RGB_565) },
+            onPoint = { typeId, point -> if (typeId == DataType.Type.SHIFTING_BATTERY) shiftingSource = point.sourceId },
         ) { values, profile ->
             // Teeth come from the gear streams' TEETH fields (also stored as "typeId/field").
             fun teeth(typeId: String, field: String) =
@@ -112,6 +129,18 @@ class RideMeterDataType(
                 RideState(
                     kmh = kmh(DataType.Type.SPEED),
                     scaleMaxKmh = RideSettings.scaleMaxKmh(appContext),
+                    dial = dial,
+                    units = profile?.preferredUnit?.let { pu ->
+                        Units(
+                            imperialDistance = pu.distance == UserProfile.PreferredUnit.UnitType.IMPERIAL,
+                            imperialElevation = pu.elevation == UserProfile.PreferredUnit.UnitType.IMPERIAL,
+                            imperialTemperature = pu.temperature == UserProfile.PreferredUnit.UnitType.IMPERIAL,
+                        )
+                    } ?: Units.METRIC,
+                    ftp = profile?.ftp,
+                    maxHr = profile?.maxHr,
+                    avgHeartRate = int(DataType.Type.AVERAGE_HR),
+                    avgCadence = int(DataType.Type.AVERAGE_CADENCE),
                     frontTeeth = teeth(DataType.Type.SHIFTING_FRONT_GEAR, DataType.Field.SHIFTING_FRONT_GEAR_TEETH),
                     rearTeeth = teeth(DataType.Type.SHIFTING_REAR_GEAR, DataType.Field.SHIFTING_REAR_GEAR_TEETH),
                     distanceKm = values[DataType.Type.DISTANCE]?.let { (it / 1000.0).coerceAtLeast(0.0) },
@@ -122,6 +151,7 @@ class RideMeterDataType(
                         axsRaw = values["${DataType.Type.SHIFTING_BATTERY}/${DataType.Field.SHIFTING_BATTERY_STATUS_REAR_DERAILLEUR}"]
                             ?: values["${DataType.Type.SHIFTING_BATTERY}/${DataType.Field.SHIFTING_BATTERY_STATUS}"],
                         di2Pct = values[KI2_BATTERY],
+                        system = ShiftingBrand.label(shiftingSource, sensors),
                     ),
                     clock = clockFormat.format(Date()),
                     // Read on every frame so a Settings change applies straight away.
@@ -132,7 +162,7 @@ class RideMeterDataType(
                     light = isLightMode(appContext),
                     brightColors = RideSettings.darkBrightColors(appContext),
                     altitudeM = values[DataType.Type.PRESSURE_ELEVATION_CORRECTION],
-                    // Assumed metres, like DISTANCE; only streams while following a route.
+                    // Metres, like DISTANCE (matched the Karoo on a route, 2026-11-09); only streams while following a route.
                     toFinishKm = values[DataType.Type.DISTANCE_TO_DESTINATION]?.let { (it / 1000.0).coerceAtLeast(0.0) },
                     heartRate = int(DataType.Type.HEART_RATE),
                     power = int(DataType.Type.POWER),
@@ -150,9 +180,19 @@ class RideMeterDataType(
                 ),
             )
         }
+        // Saved sensors, to name the brand of the shifting battery (AXS, Campagnolo, ...).
+        val devicesConsumer = karooSystem.addConsumer { d: SavedDevices ->
+            sensors = d.devices.map {
+                ShiftingBrand.Sensor(it.id, it.name, it.details?.manufacturer, it.enabled, it.supportedDataTypes)
+            }
+            sensors.filter { it.isShifting }.forEach {
+                Log.d(RideMeterExtension.TAG, "Shifting sensor: ${it.id} '${it.name}' manufacturer '${it.manufacturer}' enabled ${it.enabled} -> ${it.brand}")
+            }
+        }
         session.start()
         emitter.setCancellable {
             Log.d(RideMeterExtension.TAG, "Ride view stopped")
+            karooSystem.removeConsumer(devicesConsumer)
             session.stop()
         }
     }
@@ -170,8 +210,12 @@ class RideMeterDataType(
         }
     }
 
+    /** Sensor the latest shifting battery value came from, and the saved sensors (for the brand name). */
+    @Volatile private var shiftingSource: String? = null
+    @Volatile private var sensors: List<ShiftingBrand.Sensor> = emptyList()
+
     companion object {
-        /** Must match the typeId attribute in res/xml/extension_info.xml. */
+        /** Speed field; must match a typeId in res/xml/extension_info.xml (as do the other [DialValue.typeId]s). */
         const val TYPE_ID = "ride-meter"
 
         /** Karoo speed is m/s (confirmed on rides). */

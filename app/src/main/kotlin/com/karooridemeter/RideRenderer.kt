@@ -122,8 +122,18 @@ object RideRenderer {
         return (l.cx + r * cos(rad).toFloat()) to (l.cy + r * sin(rad).toFloat())
     }
 
-    /** Major tick step and minor tick step for a scale: every 10 (minor 2) on 0-60, 10/5 on 0-90, 5/1 on 0-30 and 0-45. */
-    fun tickSteps(scaleMax: Int): Pair<Int, Int> = if (scaleMax >= 60) 10 to (if (scaleMax >= 90) 5 else 2) else 5 to 1
+    /**
+     * Major tick step and minor tick step for a scale range: 5/1 below 60 (0-30, 0-45 km/h, 0-40 mph),
+     * 10/2 on 60, 10/5 on 90, 20/5 from 120 (cadence 0-140, heart rate 60-200), 50/10 from 300 W, 100/20 from 600 W.
+     */
+    fun tickSteps(range: Int): Pair<Int, Int> = when {
+        range >= 600 -> 100 to 20
+        range >= 300 -> 50 to 10
+        range >= 120 -> 20 to 5
+        range >= 90 -> 10 to 5
+        range >= 60 -> 10 to 2
+        else -> 5 to 1
+    }
 
     /** Status text size as a multiple of the icon height. */
     private const val STATUS_TEXT = 1.25f
@@ -139,7 +149,7 @@ object RideRenderer {
         val t = model.theme
         canvas.drawColor(t.background)
         val l = layout(width, height, model.statusLeft != null || model.statusRight != null)
-        drawDial(canvas, l, model.position, model.scaleMaxKmh, t)
+        drawDial(canvas, l, model.position, model.scaleMin, model.scaleMax, t)
         drawCentre(canvas, l, model, t)
         model.statusLeft?.let { drawStatus(canvas, l, it, left = true, t) }
         model.statusRight?.let { drawStatus(canvas, l, it, left = false, t) }
@@ -164,14 +174,15 @@ object RideRenderer {
         return p
     }
 
-    private fun drawDial(c: Canvas, l: RideLayout, pos: Float?, max: Int, t: RideTheme) {
+    private fun drawDial(c: Canvas, l: RideLayout, pos: Float?, min: Int, max: Int, t: RideTheme) {
         val r = l.radius
         c.drawArc(RectF(l.cx - r, l.cy - r, l.cx + r, l.cy + r), START_DEG, SWEEP_DEG, false,
             Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = maxOf(1.5f, r * 0.018f); color = t.ring })
-        val (major, minor) = tickSteps(max)
+        val range = (max - min).coerceAtLeast(1)
+        val (major, minor) = tickSteps(range)
         val num = text(r * 0.13f, t.textSecondary)
-        for (v in 0..max step minor) {
-            val f = v.toFloat() / max
+        for (v in min..max step minor) {
+            val f = (v - min).toFloat() / range
             val deg = START_DEG + SWEEP_DEG * f
             val isMajor = v % major == 0
             val lit = pos != null && f <= pos + 1e-4f

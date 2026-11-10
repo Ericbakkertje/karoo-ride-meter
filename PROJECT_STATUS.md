@@ -1,17 +1,46 @@
 # Karoo Ride Meter — Project Status
 
-_Last updated: 2026-11-08 — 1.2.0: light/dark mode, bright colours, choosable spots above the dial, AXS FULL, bigger status text (release built, not yet installed)._
+_Last updated: 2026-11-09 — 1.3.0: power / power 3s / heart rate / cadence on the dial (own fields), imperial units (release built, not yet installed). 1.2.0 verified on the device and on rides._
 
 ## Version
 
 | | |
 |---|---|
-| App version | **1.2.0** (`versionCode 6`) |
+| App version | **1.3.0** (`versionCode 7`) |
 | Application ID | `com.karooridemeter` |
-| Extension ID | `karoo-ride-meter` (field typeId `ride-meter`) |
+| Extension ID | `karoo-ride-meter` (field typeIds `ride-meter`, `ride-meter-power`, `ride-meter-power-3s`, `ride-meter-heart-rate`, `ride-meter-cadence`) |
 | Hammerhead SDK | `io.hammerhead:karoo-ext:1.1.9` |
 | Toolchain | Kotlin 2.0.0, Android Gradle Plugin 8.5.2, Gradle 8.8 (wrapper), JDK 17 |
 | Android | compileSdk/targetSdk 34, minSdk 23 (Karoo 3 runs Android 12L, API 32; Karoo 2 confirmed working by a tester) |
+
+## 1.3.0 (2026-11-09, approved from previews)
+- `DialValue`: what the dial shows; each value is its own data field (typeId per value, all declared in
+  `extension_info.xml`; a test checks they match). Scales (`RideGauge.scale`): speed from Settings (or the matching mph
+  scale 20/30/40/60), power 0 to 2×FTP rounded up to 100 W (300–1000, 400 when FTP unknown), heart rate 60–200 (higher if
+  max HR > 200), cadence 0–140 (0 kept for coasting). Under the value: average power / HR / cadence
+  (`AVERAGE_POWER`, `AVERAGE_HR`, `AVERAGE_CADENCE`). In non-speed fields, round field 1 shows speed and the other two
+  show the user's choices without the dial's own value.
+- `Units` from `UserProfile.preferredUnit`: distance (speed mph, distance / to finish mi), elevation (altitude / climb ft),
+  temperature (°F), each on its own. Settings names are now unit-neutral.
+- Shifting battery brand (`ShiftingBrand`): the SHIFTING_BATTERY stream has no brand, so the name comes from the Karoo's
+  saved sensors (`SavedDevices`): the sensor matching the data point's `sourceId`, else the only shifting brand among the
+  enabled sensors. SRAM → "AXS", Campagnolo → "Campa" (a tester's Campagnolo Record 13 showed "AXS" before), Shimano → "Di2",
+  unknown → "Batt". Seen on the device (2026-11-09): `23065-34-5 'AXS System 2065'` and `37417-34-5 'Drivetrain 37417'`
+  with manufacturer `SRAM` (→ AXS), `ki2::39000-1-5 'Di2 39000'` without manufacturer (name → Di2, disabled).
+  Campagnolo string still to be confirmed by the tester.
+- Dial ticks: `tickSteps(range)` 5/1 below 60, 10/2, 10/5 from 90, 20/5 from 120, 50/10 from 300, 100/20 from 600.
+- Release APK `dist/KarooRideMeter-1.3.0.apk`, SHA-256 `e92b1fb3f92e7303d436284f399b529046670b8b4ed30299147fb8aabf37466a`,
+  same release key. Tests: 33 (RideMeterTest 25, SettingsActivityTest 6, ZonesTest 2).
+- Power unit shown as "watt" above the value (was "W"; changed after the test ride on 2026-11-10).
+- Verified on the device 2026-11-09/10: the four new fields appear in the page editor (Ride Meter → ...), profile arrives
+  (FTP 199, max HR 182), imperial units work, SRAM sensors named AXS. Test ride 2026-11-10 (ended 12:29, battery 98 → 70 %):
+  no render errors, no crashes.
+
+## 1.2.0 on the device (2026-11-08 / 09)
+- Installed via the companion app (shared the 1.2.0 release link from the phone) over 1.1.2: settings kept.
+- Verified: light/dark switching, choosable spots above the dial (log: TEMPERATURE 23 °C, PRESSURE_ELEVATION ≈ 0.5 m).
+- Ride 2026-11-09 (09:47–12:18, 3–13 °C): no Ride Meter errors, no crashes or out-of-memory; battery 96 → 72 %.
+  Distance to finish matched the Karoo on a route home (so DISTANCE_TO_DESTINATION is in metres).
 
 ## 1.2.0 (2026-11-08, approved from previews)
 
@@ -209,7 +238,6 @@ Rendering tests use Robolectric native graphics (real `android.graphics` on the 
 
 ## Next steps
 
-1. Install, re-add the Ride Meter field on the Diverge and S-Works pages, set the three fields in "Ride Meter Settings".
-2. With the AXS awake (Diverge): check `first TYPE_SHIFTING_BATTERY...` and the gear teeth in the log
-   (`adb logcat -s KarooRideMeter`).
-3. On a ride: readability of the dial and round fields in daylight; ring colours with live cadence/power/HR.
+1. Install 1.3.0 (companion app or adb) and add Ride Meter Power / Heart Rate / Cadence to a page.
+2. Check in the log that the profile arrives (FTP, max HR) and, with the Karoo set to imperial, that mph / mi / ft / °F show.
+3. Keep watching for the Karoo ride-app out-of-memory crash on long rides.

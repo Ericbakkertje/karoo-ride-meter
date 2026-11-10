@@ -70,6 +70,7 @@ class SettingsActivity : Activity() {
             scaleButtons.entries.firstOrNull { it.value.id == checkedId }?.let { RideSettings.setScaleMaxKmh(this, it.key) }
         }
         root.addView(group)
+        root.addView(TextView(this).apply { text = getString(R.string.settings_scale_imperial_note) })
 
         // Line under the speed
         root.addView(sectionTitle(R.string.settings_under_speed))
@@ -131,6 +132,10 @@ class SettingsActivity : Activity() {
             })
             root.addView(slotSpinner(i, current[i]))
         }
+        root.addView(TextView(this).apply {
+            text = getString(R.string.settings_ride_boxes_note)
+            setPadding(0, pad / 2, 0, 0)
+        })
 
         root.addView(TextView(this).apply {
             text = getString(R.string.settings_note)
