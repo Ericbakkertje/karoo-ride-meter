@@ -61,3 +61,11 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 Then add the field from the page editor: **Ride Meter → Ride Meter** (or Ride Meter Power / Power 3s / Heart Rate / Cadence). For Shimano Di2 gear data, add the
 Di2 in the Karoo as a sensor (Sensors → + → Extensions → Ki2).
+
+## License
+
+Copyright (C) 2026 Ericbakkertje
+
+Karoo Ride Meter is free software: you can redistribute it and/or modify it under the terms of the
+[GNU General Public License v3.0](LICENSE) as published by the Free Software Foundation. It comes with
+no warranty.

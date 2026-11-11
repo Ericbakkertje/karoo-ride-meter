@@ -236,8 +236,12 @@ Rendering tests use Robolectric native graphics (real `android.graphics` on the 
 - Karoo 1 cannot run karoo-ext extensions, so it is not supported.
 - GitHub release v1.1.2: 22 APK downloads on 2026-11-08 (`python3 tools/downloads.py`; 1 was our own test download).
 
+## License
+
+GPL-3.0 (`LICENSE`), added 2026-11-11.
+
 ## Next steps
 
-1. Install 1.3.0 (companion app or adb) and add Ride Meter Power / Heart Rate / Cadence to a page.
-2. Check in the log that the profile arrives (FTP, max HR) and, with the Karoo set to imperial, that mph / mi / ft / °F show.
+1. Bigger distance (and average) in the middle of the dial: preview made, larger number with a small grey unit, a bit lower between 0 and the top number (planned for 1.3.1).
+2. Campagnolo tester to confirm the battery now says "Campa".
 3. Keep watching for the Karoo ride-app out-of-memory crash on long rides.
