@@ -27,6 +27,13 @@ _Rendered by the app's own drawing code (version 1.3.0) with example values._
 
 Split off from Karoo Graphic Meter. Status: see `PROJECT_STATUS.md`. Testers: see `TESTERS.md`.
 
+## Support
+
+Karoo Ride Meter is free and made in spare time. If you enjoy it and want to say thanks, you can buy me a coffee.
+Completely optional, feedback and ideas are just as welcome!
+
+[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/karooridemeter)
+
 ## Build
 
 Requirements: JDK 17, Android SDK (platform 34), and a GitHub token with `read:packages` in
