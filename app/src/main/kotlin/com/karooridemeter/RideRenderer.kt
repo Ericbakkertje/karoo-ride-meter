@@ -149,7 +149,7 @@ object RideRenderer {
         val t = model.theme
         canvas.drawColor(t.background)
         val l = layout(width, height, model.statusLeft != null || model.statusRight != null)
-        drawDial(canvas, l, model.position, model.scaleMin, model.scaleMax, t)
+        drawDial(canvas, l, model.position, model.scaleMin, model.scaleMax, t, model.ringZones)
         drawCentre(canvas, l, model, t)
         model.statusLeft?.let { drawStatus(canvas, l, it, left = true, t) }
         model.statusRight?.let { drawStatus(canvas, l, it, left = false, t) }
@@ -174,10 +174,11 @@ object RideRenderer {
         return p
     }
 
-    private fun drawDial(c: Canvas, l: RideLayout, pos: Float?, min: Int, max: Int, t: RideTheme) {
+    private fun drawDial(c: Canvas, l: RideLayout, pos: Float?, min: Int, max: Int, t: RideTheme, zones: List<RingZone> = emptyList()) {
         val r = l.radius
         c.drawArc(RectF(l.cx - r, l.cy - r, l.cx + r, l.cy + r), START_DEG, SWEEP_DEG, false,
             Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = maxOf(1.5f, r * 0.018f); color = t.ring })
+        if (pos != null) drawRingZones(c, l, zones, pos, t)
         val range = (max - min).coerceAtLeast(1)
         val (major, minor) = tickSteps(range)
         val num = text(r * 0.13f, t.textSecondary)
@@ -200,6 +201,19 @@ object RideRenderer {
             }
         }
         if (pos != null) drawNeedle(c, l, angleFor(pos), t)
+    }
+
+    /** Power dials: a thick ring in the zone colours from the start up to the needle; the rest stays the thin ring. */
+    private fun drawRingZones(c: Canvas, l: RideLayout, zones: List<RingZone>, pos: Float, t: RideTheme) {
+        val r = l.radius
+        val oval = RectF(l.cx - r, l.cy - r, l.cx + r, l.cy + r)
+        for (z in zones) {
+            val end = minOf(z.to, pos)
+            if (end <= z.from) continue
+            c.drawArc(oval, START_DEG + SWEEP_DEG * z.from, SWEEP_DEG * (end - z.from), false, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE; strokeWidth = r * 0.05f; strokeCap = Paint.Cap.BUTT; color = t.color(z.color)
+            })
+        }
     }
 
     /** Red tapered pointer across the ticks, with a dark outline so it stands out on lit ticks. */
@@ -233,12 +247,25 @@ object RideRenderer {
         val speed = m.speedText ?: "--"
         val col = if (m.speedText != null) t.text else t.textSecondary
         c.drawText(speed, l.cx, l.cy + r * 0.17f, fit(text(r * 0.44f, col), speed, free(l, r * 0.05f) * 1.85f))
-        // Line under the speed (distance or average speed, chosen in Settings) where the gear used to be.
-        // Average speed gets a small grey "AVG" label above its value, like GEAR in the status row.
+        // Value under the big one (distance, or an average with a small grey "AVG" label above it). It sits low,
+        // between the bottom ends of the scale, so it can be big: large number, small grey unit ("61.2 km").
         m.underSpeedLabel?.let { label ->
-            c.drawText(label, l.cx, l.cy + r * 0.33f, fit(text(r * 0.10f, t.textSecondary), label, r * 0.6f))
+            c.drawText(label, l.cx, l.cy + r * 0.46f, fit(text(r * 0.10f, t.textSecondary), label, r * 0.6f))
         }
-        c.drawText(m.underSpeedText, l.cx, l.cy + r * 0.50f, fit(text(r * 0.16f, t.text), m.underSpeedText, r * 0.78f))
+        val under = m.underSpeedText
+        val hasUnit = under.contains(' ')
+        val num = if (hasUnit) under.substringBeforeLast(' ') else under
+        val unit = if (hasUnit) under.substringAfterLast(' ') else ""
+        val numP = text(r * 0.24f, t.text, Paint.Align.LEFT)
+        val unitP = text(r * 0.13f, t.textSecondary, Paint.Align.LEFT)
+        val gap = if (hasUnit) r * 0.03f else 0f
+        val total = numP.measureText(num) + gap + unitP.measureText(unit)
+        val maxW = r * 0.95f
+        if (total > maxW) { val k = maxW / total; numP.textSize *= k; unitP.textSize *= k }
+        val x0 = l.cx - minOf(total, maxW) / 2f
+        val y = l.cy + r * 0.70f
+        c.drawText(num, x0, y, numP)
+        if (hasUnit) c.drawText(unit, x0 + numP.measureText(num) + gap * minOf(1f, maxW / total), y, unitP)
     }
 
     /** One status spot: the battery block, or a value with its label under it. Left spots start at the dial's left edge, right spots end at its right edge. */
@@ -305,6 +332,7 @@ object RideRenderer {
     }
 
     private fun drawCircleField(c: Canvas, f: RideField, s: RideSlot, t: RideTheme) {
+        s.gauge?.let { drawMiniDial(c, f, s, it, t); return }
         val d = f.diameter
         val border = maxOf(2.5f, d * 0.045f)
         c.drawCircle(f.cx, f.cy, d / 2f - border / 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -314,6 +342,62 @@ object RideRenderer {
         val v = s.value ?: "--"
         val vp = fit(text(d * 0.33f, if (s.value != null) t.text else t.textSecondary), v, d * 0.72f)
         c.drawText(v, f.cx, f.cy + d * 0.10f + vp.textSize * 0.36f, vp)
+    }
+
+    /**
+     * Round field as a small dial (Settings: "Small dial"): ticks lit up to the value, a thick arc in the field
+     * colour up to the red needle, the value in the middle and the label low between the ends of the scale.
+     */
+    private fun drawMiniDial(c: Canvas, f: RideField, s: RideSlot, g: SlotGauge, t: RideTheme) {
+        val d = f.diameter
+        val r = d / 2f * 0.92f
+        val oval = RectF(f.cx - r, f.cy - r, f.cx + r, f.cy + r)
+        fun pt(deg: Float, rr: Float): Pair<Float, Float> {
+            val a = Math.toRadians(deg.toDouble())
+            return (f.cx + cos(a).toFloat() * rr) to (f.cy + sin(a).toFloat() * rr)
+        }
+        c.drawArc(oval, START_DEG, SWEEP_DEG, false, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE; strokeWidth = maxOf(1.5f, r * 0.03f); color = t.ring
+        })
+        val pos = g.position
+        if (pos != null && pos > 0f && s.color != RideGauge.NEUTRAL) {
+            c.drawArc(oval, START_DEG, SWEEP_DEG * pos, false, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE; strokeWidth = r * 0.09f; strokeCap = Paint.Cap.BUTT; color = t.color(s.color)
+            })
+        }
+        val range = (g.max - g.min).coerceAtLeast(1)
+        val (major, minorStep) = tickSteps(range)
+        val minor = if (range / minorStep > 30) major / 2 else minorStep
+        for (v in g.min..g.max step minor) {
+            val fr = (v - g.min).toFloat() / range
+            val deg = START_DEG + SWEEP_DEG * fr
+            val isMajor = v % major == 0
+            val lit = pos != null && fr <= pos + 1e-4f
+            val (x1, y1) = pt(deg, r * (if (isMajor) 0.78f else 0.86f))
+            val (x2, y2) = pt(deg, r * 0.95f)
+            c.drawLine(x1, y1, x2, y2, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = if (lit) t.tickLit else t.tickDim
+                strokeWidth = if (isMajor) maxOf(2f, r * 0.045f) else maxOf(1f, r * 0.022f)
+            })
+        }
+        if (pos != null) {
+            val deg = START_DEG + SWEEP_DEG * pos
+            val (tx, ty) = pt(deg, r)
+            val (bx, by) = pt(deg, r * 0.62f)
+            val half = r * 0.05f
+            val a = Math.toRadians(deg.toDouble())
+            val nx = -sin(a).toFloat() * half
+            val ny = cos(a).toFloat() * half
+            val path = Path().apply { moveTo(tx, ty); lineTo(bx + nx, by + ny); lineTo(bx - nx, by - ny); close() }
+            c.drawPath(path, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE; strokeWidth = maxOf(2f, r * 0.035f); color = t.background; strokeJoin = Paint.Join.ROUND
+            })
+            c.drawPath(path, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = t.needle })
+        }
+        val v = s.value ?: "--"
+        val vp = fit(text(d * 0.27f, if (s.value != null) t.text else t.textSecondary), v, d * 0.52f)
+        c.drawText(v, f.cx, f.cy + vp.textSize * 0.36f, vp)
+        c.drawText(s.label, f.cx, f.cy + r * 0.66f, fit(text(d * 0.11f, t.textSecondary), s.label, d * 0.5f))
     }
 
     /** Middle field in short wide fields: "LABEL: value" on one line, value in the field color if it has one. */

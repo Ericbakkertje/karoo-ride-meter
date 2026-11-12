@@ -21,11 +21,14 @@
     <string name="settings_status">Above the dial</string>
     <string name="settings_status_left">Top left</string>
     <string name="settings_status_right">Top right</string>
-    <string name="settings_dark_colors">Colours in dark mode</string>
+    <string name="settings_dark_colors">Colours</string>
     <string name="settings_dark_colors_normal">Normal (neon)</string>
     <string name="settings_dark_colors_bright">Bright (stronger colours)</string>
-    <string name="settings_light_note">The meter follows the Karoo light or dark mode. Light mode always uses the bright colours.</string>
+    <string name="settings_colors_classic">Classic (blue, green, yellow, orange, red)</string>
+    <string name="settings_light_note">The meter follows the Karoo light or dark mode. In light mode Normal and Bright both use the bright colours; Classic stays classic.</string>
     <string name="settings_ride_boxes">Round fields</string>
+    <string name="settings_round_number">Number in a coloured circle</string>
+    <string name="settings_round_dial">Small dial with needle (speed, power, heart rate, cadence, slope)</string>
     <string name="settings_ride_box_1">Field 1 (left; top in a wide field)</string>
     <string name="settings_ride_box_2">Field 2 (middle)</string>
     <string name="settings_ride_box_3">Field 3 (right; bottom in a wide field)</string>

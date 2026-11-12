@@ -240,8 +240,25 @@ Rendering tests use Robolectric native graphics (real `android.graphics` on the 
 
 GPL-3.0 (`LICENSE`), added 2026-11-11.
 
+## Release files
+
+Since 1.4.0 the app has `io.hammerhead.karooext.MANIFEST_URL` meta-data pointing to the release `manifest.json` (found in Ki2/Headwind/myWindsock); that is what lets the Karoo offer updates.
+
+
+Every GitHub release gets three assets: the APK, `manifest.json` (update check on the Karoo, same format as Ki2: bump `latestVersion`, `latestVersionCode`, the APK name in `latestApkUrl` and `releaseNotes`) and `icon.png`. Copies are in `dist/` (git-ignored). Added to 1.3.0 on 2026-11-11.
+
 ## Next steps
 
-1. Bigger distance (and average) in the middle of the dial: preview made, larger number with a small grey unit, a bit lower between 0 and the top number (planned for 1.3.1).
-2. Campagnolo tester to confirm the battery now says "Campa".
-3. Keep watching for the Karoo ride-app out-of-memory crash on long rides.
+1. Bigger distance (and average) in the middle of the dial: large number with a small grey unit ("61.2 km"), lower, between the bottom ends of the scale; "AVG" label moves down with it. Built and checked in all preview sizes 2026-11-11 (in 1.4.0).
+2. Power dials (Power and Power 3s): thick ring in the power-zone colours (from the Karoo profile) from 0 up to the needle; the rest stays the thin grey ring. Speed, HR and cadence unchanged. Built and unit-tested 2026-11-11 (in 1.4.0). Zones come from the Karoo settings item **Training metrics** (FTP and power zones); named in README/TESTERS.
+3. "Distance" added as a choice for the two spots above the dial (user request: distance left, distance to finish right, average speed under the speed). Built and unit-tested 2026-11-12, in 1.4.0.
+3b. Round fields as small dials (Settings "Round fields": number in a coloured circle (default) or small dial with needle; speed/avg/max speed, power/3s/avg/NP, HR, cadence and slope -10..+20 %; others stay a number). Colour choice "Classic" (blue, green, lime, yellow, orange, real red, purple; deeper set in light mode), stored as `color_style` (old `dark_bright_colors` still read). Both in 1.4.0 (2026-11-12).
+4. Larger, non-bold small text (user request, "old eyes"): previews first, maybe as a Settings option.
+5. Wind arrow in a round field (user request). Tested 2026-11-12 on the Karoo: an extension CAN stream another extension's data types (`DataType.dataTypeId(ext, type)`).
+   - myWindsock 2.8.3 (id `MyWindsock`): `wind-speed` and `yaw` stream numbers (0.0 while standing still); `relative-bearing` (the arrow field) is graphical only, NotAvailable as a number. Meaning of `yaw` while riding still to check.
+   - Headwind 1.6.4 (id `karoo-headwind`, open source): `headwind` = wind direction relative to the riding direction in degrees (0-360, error codes when no heading), `windDirection` = absolute degrees, `windSpeed` in the user's Headwind wind unit, `headwindSpeed`.
+   - The temporary "WINDPROBE" logging (test build 2026-11-12) is removed again; 1.4.0 has none.
+   - Ride 2026-11-12 (last ~5 min in logcat): Headwind is consistent: `headwindSpeed = -windSpeed * cos(headwind)`, so `headwind` is the direction the wind blows TO relative to riding (0 = straight tailwind, 180 = straight headwind; positive headwindSpeed = headwind). myWindsock `yaw` jumped -73..+54 (looks like apparent/yaw angle incl. rider speed, not a 360 arrow); its `wind-speed` stayed 9.0 vs Headwind 4.7 (units unknown). Choice: build on Headwind. Proposed field "Ride Meter Wind" (arrow + wind speed, red headwind / green tailwind); user said "not yet" for previews. Still unknown: Headwind windSpeed unit.
+6. Campagnolo tester to confirm the battery now says "Campa".
+7. Keep watching for the Karoo ride-app out-of-memory crash on long rides.
+8. Needle feels jumpy on the power dial (user, ride 2026-11-12): power streams ~1/s and the needle jumps straight to the new value (render loop max 2/s, only on change). Idea: ease the needle in ~4 frames/s (value text stays real). User: "leave it for now"; measure memory/battery first if picked up (OOM concern).

@@ -33,8 +33,11 @@ class SettingsActivity : Activity() {
     internal lateinit var statusLeftSpinner: Spinner
     internal lateinit var statusRightSpinner: Spinner
 
-    /** Dark-mode colours: false = normal, true = bright -> its radio button. Internal for tests. */
-    internal val darkColorButtons = linkedMapOf<Boolean, RadioButton>()
+    /** Colour style -> its radio button. Internal for tests. */
+    internal val colorButtons = linkedMapOf<ColorStyle, RadioButton>()
+
+    /** Round field style: false = number in a circle, true = small dial -> its radio button. Internal for tests. */
+    internal val miniDialButtons = linkedMapOf<Boolean, RadioButton>()
 
     private val density get() = resources.displayMetrics.density
     private val pad get() = (16 * density).toInt()
@@ -102,26 +105,22 @@ class SettingsActivity : Activity() {
 
         // Colours
         root.addView(sectionTitle(R.string.settings_dark_colors))
-        val colors = RadioGroup(this)
-        listOf(false to R.string.settings_dark_colors_normal, true to R.string.settings_dark_colors_bright).forEach { (bright, res) ->
-            val button = RadioButton(this).apply {
-                id = View.generateViewId()
-                text = getString(res)
-                textSize = 18f
-                minHeight = (48 * density).toInt()
-            }
-            colors.addView(button)
-            darkColorButtons[bright] = button
-        }
-        darkColorButtons[RideSettings.darkBrightColors(this)]?.let { colors.check(it.id) }
-        colors.setOnCheckedChangeListener { _, checkedId ->
-            darkColorButtons.entries.firstOrNull { it.value.id == checkedId }?.let { RideSettings.setDarkBrightColors(this, it.key) }
-        }
-        root.addView(colors)
+        root.addView(radioGroup(
+            listOf(
+                ColorStyle.NEON to R.string.settings_dark_colors_normal,
+                ColorStyle.BRIGHT to R.string.settings_dark_colors_bright,
+                ColorStyle.CLASSIC to R.string.settings_colors_classic,
+            ),
+            colorButtons, RideSettings.colorStyle(this),
+        ) { RideSettings.setColorStyle(this, it) })
         root.addView(TextView(this).apply { text = getString(R.string.settings_light_note) })
 
         // Round fields
         root.addView(sectionTitle(R.string.settings_ride_boxes))
+        root.addView(radioGroup(
+            listOf(false to R.string.settings_round_number, true to R.string.settings_round_dial),
+            miniDialButtons, RideSettings.miniDials(this),
+        ) { RideSettings.setMiniDials(this, it) })
         val current = RideSettings.rideSlots(this)
         val names = listOf(R.string.settings_ride_box_1, R.string.settings_ride_box_2, R.string.settings_ride_box_3)
         names.forEachIndexed { i, nameRes ->
@@ -143,6 +142,26 @@ class SettingsActivity : Activity() {
         })
 
         setContentView(ScrollView(this).apply { addView(root) })
+    }
+
+    /** One radio button per option; the current one checked; [save] on change. */
+    private fun <T> radioGroup(options: List<Pair<T, Int>>, buttons: MutableMap<T, RadioButton>, current: T, save: (T) -> Unit): RadioGroup {
+        val group = RadioGroup(this)
+        options.forEach { (value, res) ->
+            val button = RadioButton(this).apply {
+                id = View.generateViewId()
+                text = getString(res)
+                textSize = 18f
+                minHeight = (48 * density).toInt()
+            }
+            group.addView(button)
+            buttons[value] = button
+        }
+        buttons[current]?.let { group.check(it.id) }
+        group.setOnCheckedChangeListener { _, checkedId ->
+            buttons.entries.firstOrNull { it.value.id == checkedId }?.let { save(it.key) }
+        }
+        return group
     }
 
     private fun slotSpinner(index: Int, selected: RideSlotValue): Spinner {

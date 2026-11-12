@@ -29,6 +29,10 @@
             <meta-data
                 android:name="io.hammerhead.karooext.EXTENSION_INFO"
                 android:resource="@xml/extension_info" />
+            <!-- Where the Karoo checks for updates (same file as the manifest.json in each GitHub release). -->
+            <meta-data
+                android:name="io.hammerhead.karooext.MANIFEST_URL"
+                android:value="https://github.com/Ericbakkertje/karoo-ride-meter/releases/latest/download/manifest.json" />
         </service>
 
     </application>

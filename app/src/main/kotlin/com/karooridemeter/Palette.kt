@@ -47,7 +47,7 @@ object GaugePalette {
  * dark text. Light mode always uses the bright ring colours, which stay readable on a light background;
  * dark mode uses them only when chosen in Settings.
  */
-data class RideTheme(val light: Boolean = false, val brightColors: Boolean = false) {
+data class RideTheme(val light: Boolean = false, val brightColors: Boolean = false, val classic: Boolean = false) {
     val bright: Boolean get() = light || brightColors
 
     val background: Int get() = if (light) 0xFFF4F6FA.toInt() else GaugePalette.BACKGROUND
@@ -61,9 +61,10 @@ data class RideTheme(val light: Boolean = false, val brightColors: Boolean = fal
     /** A zone colour as drawn in this theme: the bright variant when [bright]; grey for "no value" in light mode. */
     fun color(c: Int): Int {
         if (c == RideGauge.NEUTRAL) return if (light) LIGHT_NEUTRAL else c
-        if (!bright) return c
         val i = GaugePalette.ZONES.indexOf(c)
-        return if (i >= 0) BRIGHT_ZONES[i] else c
+        if (i < 0) return c
+        if (classic) return (if (light) CLASSIC_LIGHT_ZONES else CLASSIC_ZONES)[i]
+        return if (bright) BRIGHT_ZONES[i] else c
     }
 
     companion object {
@@ -79,6 +80,28 @@ data class RideTheme(val light: Boolean = false, val brightColors: Boolean = fal
             0xFFE6007E.toInt(), // 5 magenta
             0xFFD9002B.toInt(), // 6 red
             0xFF7B2FF0.toInt(), // 7 purple
+        )
+
+        /** "Classic" colours (chosen in Settings): plain blue, green, yellow, orange, real red (same order as [GaugePalette.ZONES]). */
+        val CLASSIC_ZONES = intArrayOf(
+            0xFF2D7DFF.toInt(), // 1 blue
+            0xFF00D84A.toInt(), // 2 green
+            0xFFB4F000.toInt(), // 3 lime
+            0xFFFFE000.toInt(), // 4 yellow
+            0xFFFF7A00.toInt(), // 5 orange
+            0xFFFF1A1A.toInt(), // 6 red
+            0xFFB33CFF.toInt(), // 7 purple
+        )
+
+        /** [CLASSIC_ZONES] a bit deeper, for the light card. */
+        val CLASSIC_LIGHT_ZONES = intArrayOf(
+            0xFF0050D8.toInt(), // 1 blue
+            0xFF00A03A.toInt(), // 2 green
+            0xFF7DB800.toInt(), // 3 lime
+            0xFFE0B000.toInt(), // 4 yellow
+            0xFFF06000.toInt(), // 5 orange
+            0xFFE00000.toInt(), // 6 red
+            0xFF8A1FE0.toInt(), // 7 purple
         )
     }
 }

@@ -72,11 +72,29 @@ class SettingsActivityTest {
     }
 
     @Test
-    fun darkColorsDefaultToNormalAndSaveChoice() {
-        assertEquals(false, RideSettings.darkBrightColors(context))
+    fun colorsDefaultToNeonAndSaveChoice() {
+        assertEquals(ColorStyle.NEON, RideSettings.colorStyle(context))
         val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
-        assertTrue(activity.darkColorButtons.getValue(false).isChecked)
-        activity.darkColorButtons.getValue(true).performClick()
-        assertEquals(true, RideSettings.darkBrightColors(context))
+        assertTrue(activity.colorButtons.getValue(ColorStyle.NEON).isChecked)
+        activity.colorButtons.getValue(ColorStyle.CLASSIC).performClick()
+        assertEquals(ColorStyle.CLASSIC, RideSettings.colorStyle(context))
+        activity.colorButtons.getValue(ColorStyle.BRIGHT).performClick()
+        assertEquals(ColorStyle.BRIGHT, RideSettings.colorStyle(context))
+    }
+
+    @Test
+    fun oldBrightSettingStillRead() {
+        context.getSharedPreferences("ride_meter_settings", android.content.Context.MODE_PRIVATE).edit()
+            .putBoolean("dark_bright_colors", true).commit()
+        assertEquals(ColorStyle.BRIGHT, RideSettings.colorStyle(context))
+    }
+
+    @Test
+    fun roundFieldsDefaultToNumberAndSaveDialChoice() {
+        assertEquals(false, RideSettings.miniDials(context))
+        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        assertTrue(activity.miniDialButtons.getValue(false).isChecked)
+        activity.miniDialButtons.getValue(true).performClick()
+        assertEquals(true, RideSettings.miniDials(context))
     }
 }

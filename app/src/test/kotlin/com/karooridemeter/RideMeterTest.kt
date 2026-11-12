@@ -223,6 +223,29 @@ class RideMeterTest {
     }
 
     @Test
+    fun powerDialsGetZoneRing() {
+        val zones = PowerZones.fromFtp(250) // Z2 from 140 W, Z6 from 303 W, Z7 from 378 W
+        val ring = RideGauge.ringZones(zones, 0, 500)
+        assertEquals(7, ring.size)
+        assertEquals(0f, ring.first().from, 0f)
+        assertEquals(1f, ring.last().to, 0f)
+        assertEquals(140f / 500f, ring[1].from, 0.0001f)
+        assertEquals(ring[0].to, ring[1].from, 0f)
+        assertEquals(GaugePalette.ZONES[4], ring[4].color)
+        // Zones above the scale top are left out.
+        assertEquals(5, RideGauge.ringZones(zones, 0, 300).size)
+
+        val s = state().copy(power = 285, power3s = 280, ftp = 250, powerZones = zones)
+        assertEquals(7, RideGauge.model(s.copy(dial = DialValue.POWER)).ringZones.size)
+        assertEquals(7, RideGauge.model(s.copy(dial = DialValue.POWER_3S)).ringZones.size)
+        // Speed, heart rate and cadence keep the plain ring.
+        for (d in listOf(DialValue.SPEED, DialValue.HEART_RATE, DialValue.CADENCE))
+            assertEquals(emptyList<RingZone>(), RideGauge.model(s.copy(dial = d)).ringZones)
+        // No zones known: plain ring.
+        assertEquals(emptyList<RingZone>(), RideGauge.model(s.copy(dial = DialValue.POWER, powerZones = emptyList())).ringZones)
+    }
+
+    @Test
     fun powerHeartRateAndCadenceDials() {
         val s = state().copy(
             power = 245, power3s = 230, avgPower = 212, heartRate = 150, avgHeartRate = 138, avgCadence = 84,
@@ -416,6 +439,18 @@ class RideMeterTest {
     }
 
     @Test
+    fun distanceInTopSpot() {
+        val m = RideGauge.model(state().copy(statusLeft = StatusValue.DISTANCE, statusRight = StatusValue.TO_FINISH, toFinishKm = 18.36,
+            underSpeed = UnderSpeed.AVG_SPEED, avgKmh = 26.08))
+        assertEquals(StatusItem.Value("61.2", "DIST km", true), m.statusLeft)
+        assertEquals(StatusItem.Value("18.4", "TO FINISH km", true), m.statusRight)
+        assertEquals("26.08" to "AVG", m.underSpeedText to m.underSpeedLabel)
+        val mi = RideGauge.model(state().copy(statusLeft = StatusValue.DISTANCE, units = Units(true, true, true)))
+        assertEquals(StatusItem.Value("38.0", "DIST mi", true), mi.statusLeft)
+        assertEquals(StatusItem.Value("--", "DIST km", false), RideGauge.status(StatusValue.DISTANCE, state(null)))
+    }
+
+    @Test
     fun axsFullAndStatusSpots() {
         assertEquals("FULL", ShiftBattery.axs(0.0)!!.text)
         assertEquals("CRITICAL", ShiftBattery.axs(4.0)!!.text)
@@ -464,5 +499,32 @@ class RideMeterTest {
         val d = abs(Color.red(expected) - Color.red(actual)) + abs(Color.green(expected) - Color.green(actual)) +
             abs(Color.blue(expected) - Color.blue(actual))
         assertTrue("$label: expected #%06X got #%06X".format(expected and 0xFFFFFF, actual and 0xFFFFFF), d < 40)
+    }
+
+    @Test
+    fun miniDialsOnlyForValuesWithAScale() {
+        val base = RideState(
+            kmh = 30.0, scaleMaxKmh = 60, ftp = 250, gradePct = 5.0, heartRate = 130, cadenceRpm = 70, clock = "12:00",
+            slots = listOf(RideSlotValue.SLOPE, RideSlotValue.HEART_RATE, RideSlotValue.CLOCK),
+        )
+        assertTrue(RideGauge.model(base).slots.all { it.gauge == null })
+        val slots = RideGauge.model(base.copy(miniDials = true)).slots
+        assertEquals(SlotGauge(-10, 20, 0.5f), slots[0].gauge)
+        assertEquals(60, slots[1].gauge!!.min)
+        assertEquals(200, slots[1].gauge!!.max)
+        assertEquals(0.5f, slots[1].gauge!!.position!!, 1e-4f)
+        assertEquals(null, slots[2].gauge)
+        // Power uses the dial's FTP scale (0-500 W at FTP 250); no value = no needle.
+        val p = RideGauge.slot(RideSlotValue.POWER, base.copy(miniDials = true, power = 250))
+        assertEquals(SlotGauge(0, 500, 0.5f), p.gauge)
+        assertEquals(null, RideGauge.slot(RideSlotValue.CADENCE, base.copy(miniDials = true, cadenceRpm = null)).gauge!!.position)
+    }
+
+    @Test
+    fun classicColorsAreRealRed() {
+        assertEquals(RideTheme.CLASSIC_ZONES[5], RideTheme(classic = true).color(GaugePalette.ZONES[5]))
+        assertEquals(RideTheme.CLASSIC_LIGHT_ZONES[5], RideTheme(light = true, classic = true).color(GaugePalette.ZONES[5]))
+        assertEquals(RideGauge.NEUTRAL, RideTheme(classic = true).color(RideGauge.NEUTRAL))
+        assertEquals(true, RideGauge.model(RideState(kmh = 1.0, scaleMaxKmh = 60, classicColors = true)).theme.classic)
     }
 }

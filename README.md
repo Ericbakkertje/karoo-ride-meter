@@ -8,11 +8,15 @@ A combined graphical data field for the Hammerhead Karoo 3 (also reported workin
   scale that fits (power from your FTP, heart rate 60–200, cadence 0–140) and speed in the first round field,
 - two spots above the dial, chosen in Settings: by default the shifting battery on the left (SRAM AXS level from
   the Karoo, or Shimano Di2 % from the [Ki2](https://github.com/valterc/ki2) extension) and the gear (front / rear
-  teeth) on the right; or temperature, grade, altitude, elevation gain, distance to finish, or nothing
+  teeth) on the right; or distance, distance to finish, temperature, grade, altitude, elevation gain, or nothing
   (for mechanical shifting; with both set to nothing the dial moves up),
-- distance or average speed under the speed (your choice),
-- three round fields you choose in "Ride Meter Settings" (slope, cadence, power, HR, …), coloured by your zones,
-- follows the Karoo's light or dark mode (light mode uses stronger colours; dark mode can use them too),
+- distance or average speed under the speed (your choice), in big numbers,
+- on the power dials, the ring fills up to the needle in your power-zone colours (from your FTP and zones in the
+  Karoo settings under **Training metrics**),
+- three round fields you choose in "Ride Meter Settings" (slope, cadence, power, HR, …), coloured by your zones;
+  shown as a number in a coloured circle or as small dials with a needle,
+- colours: normal (neon), bright, or classic (blue, green, yellow, orange, real red),
+- follows the Karoo's light or dark mode,
 - follows the Karoo's units: mph, mi, ft and °F when the Karoo is set to imperial.
 
 | Full page | Light mode | Half page |
@@ -23,7 +27,11 @@ A combined graphical data field for the Hammerhead Karoo 3 (also reported workin
 |---|---|---|
 | ![Ride Meter Power](docs/ride_meter_power_478x721.png) | ![Ride Meter Heart Rate](docs/ride_meter_heart_rate_478x721.png) | ![Ride Meter in mph](docs/ride_meter_imperial_478x721.png) |
 
-_Rendered by the app's own drawing code (version 1.3.0) with example values._
+| Small dials | Classic colours | Average speed |
+|---|---|---|
+| ![Round fields as small dials](docs/ride_meter_mini_dials_478x721.png) | ![Ride Meter Power, classic colours](docs/ride_meter_classic_power_478x721.png) | ![Average speed under the speed](docs/ride_meter_avg_speed_478x721.png) |
+
+_Rendered by the app's own drawing code (version 1.4.0) with example values. Overview: [docs/ride_meter_info_1.4.0.png](docs/ride_meter_info_1.4.0.png)._
 
 Split off from Karoo Graphic Meter. Status: see `PROJECT_STATUS.md`. Testers: see `TESTERS.md`.
 

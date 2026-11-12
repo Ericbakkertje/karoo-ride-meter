@@ -11,6 +11,8 @@ object RideSettings {
     private const val KEY_STATUS_LEFT = "status_left"
     private const val KEY_STATUS_RIGHT = "status_right"
     private const val KEY_DARK_BRIGHT = "dark_bright_colors"
+    private const val KEY_COLOR_STYLE = "color_style"
+    private const val KEY_MINI_DIALS = "round_mini_dials"
 
     /** Dial scale: each option ends on a numbered tick (see RideRenderer.tickSteps). */
     const val DEFAULT_SCALE_MAX_KMH = 60
@@ -58,13 +60,27 @@ object RideSettings {
         prefs(context).edit().putString(KEY_STATUS_RIGHT, value.name).apply()
     }
 
-    /** Bright ring colours in dark mode (light mode always uses them). Default: the normal neon colours. */
-    fun darkBrightColors(context: Context): Boolean = prefs(context).getBoolean(KEY_DARK_BRIGHT, false)
+    /** Ring colours: neon (default), bright, or classic. Before 1.3.1 this was only "bright in dark mode" (still read). */
+    fun colorStyle(context: Context): ColorStyle {
+        val p = prefs(context)
+        return ColorStyle.entries.firstOrNull { it.name == p.getString(KEY_COLOR_STYLE, null) }
+            ?: if (p.getBoolean(KEY_DARK_BRIGHT, false)) ColorStyle.BRIGHT else ColorStyle.NEON
+    }
 
-    fun setDarkBrightColors(context: Context, bright: Boolean) {
-        prefs(context).edit().putBoolean(KEY_DARK_BRIGHT, bright).apply()
+    fun setColorStyle(context: Context, style: ColorStyle) {
+        prefs(context).edit().putString(KEY_COLOR_STYLE, style.name).putBoolean(KEY_DARK_BRIGHT, style == ColorStyle.BRIGHT).apply()
+    }
+
+    /** Round fields as small dials with a needle. Default: number in a coloured circle. */
+    fun miniDials(context: Context): Boolean = prefs(context).getBoolean(KEY_MINI_DIALS, false)
+
+    fun setMiniDials(context: Context, on: Boolean) {
+        prefs(context).edit().putBoolean(KEY_MINI_DIALS, on).apply()
     }
 
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 }
+
+/** Ring colours chosen in Settings. Light mode uses bright for [NEON] and [BRIGHT]. */
+enum class ColorStyle { NEON, BRIGHT, CLASSIC }

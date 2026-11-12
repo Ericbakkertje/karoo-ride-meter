@@ -131,6 +131,7 @@ enum class StatusValue(val settingsName: String) {
     GRADE("Grade (%)"),
     ALTITUDE("Altitude"),
     CLIMB("Elevation gain"),
+    DISTANCE("Distance"),
     TO_FINISH("Distance to finish (on a route)"),
     NONE("Nothing"),
     ;
@@ -265,6 +266,10 @@ data class RideState(
     val light: Boolean = false,
     /** Bright ring colours in dark mode (chosen in Settings). */
     val brightColors: Boolean = false,
+    /** Classic colours (blue, green, yellow, orange, red) instead of neon, chosen in Settings. */
+    val classicColors: Boolean = false,
+    /** Round fields as small dials with a needle (speed, power, heart rate, cadence, slope), chosen in Settings. */
+    val miniDials: Boolean = false,
     val altitudeM: Double? = null,
     val toFinishKm: Double? = null,
     val gradePct: Double? = null,
@@ -285,8 +290,11 @@ data class RideState(
     val hrZones: List<HrZone> = emptyList(),
 )
 
-/** One box: label, value text (null = "--") and border color. */
-data class RideSlot(val label: String, val value: String?, val color: Int)
+/** One box: label, value text (null = "--") and border color; [gauge] set = drawn as a small dial. */
+data class RideSlot(val label: String, val value: String?, val color: Int, val gauge: SlotGauge? = null)
+
+/** Scale of a small round dial and where its needle is (0..1, null = no value). */
+data class SlotGauge(val min: Int, val max: Int, val position: Float?)
 
 /** Everything one Ride Meter frame shows, as display-ready text and colors. */
 data class RideModel(
@@ -310,7 +318,12 @@ data class RideModel(
     val statusLeft: StatusItem? = StatusItem.Battery(shiftBattery),
     val statusRight: StatusItem? = null,
     val theme: RideTheme = RideTheme.DARK,
+    /** Power dials: the zone colours along the ring (0..1 of the scale), drawn up to the needle. Empty = plain ring. */
+    val ringZones: List<RingZone> = emptyList(),
 )
+
+/** One power zone on the dial ring, from [from] to [to] (0..1 of the scale), in [color]. */
+data class RingZone(val from: Float, val to: Float, val color: Int)
 
 /** Turns raw ride values into a [RideModel]. Pure Kotlin, unit-tested on the Mac. */
 object RideGauge {
@@ -361,8 +374,20 @@ object RideGauge {
             shiftBattery = s.shiftBattery,
             statusLeft = status(s.statusLeft, s),
             statusRight = status(s.statusRight, s),
-            theme = RideTheme(light = s.light, brightColors = s.brightColors),
+            theme = RideTheme(light = s.light, brightColors = s.brightColors, classic = s.classicColors),
+            ringZones = if (s.dial == DialValue.POWER || s.dial == DialValue.POWER_3S) ringZones(s.powerZones, scaleMin, scaleMax) else emptyList(),
         )
+    }
+
+    /** Power zones as parts of the dial ring; zones outside the scale are left out. */
+    fun ringZones(zones: List<PowerZone>, scaleMin: Int, scaleMax: Int): List<RingZone> {
+        val range = (scaleMax - scaleMin).coerceAtLeast(1).toFloat()
+        fun f(w: Int) = ((w - scaleMin) / range).coerceIn(0f, 1f)
+        return zones.mapIndexedNotNull { i, z ->
+            val from = if (i == 0) 0f else f(z.min)
+            val to = if (i == zones.lastIndex) 1f else f(zones[i + 1].min)
+            if (to > from) RingZone(from, to, GaugePalette.ZONES[i.coerceIn(0, GaugePalette.ZONES.lastIndex)]) else null
+        }
     }
 
     /** Lowest heart rate on the dial; below it the needle rests at the start. */
@@ -377,7 +402,10 @@ object RideGauge {
      * (300-1000 W). Heart rate: 60 up to 200 bpm, or the max heart rate rounded up to 20 if that is higher.
      * Cadence: 0-140 rpm (0 stays on the dial for coasting).
      */
-    fun scale(s: RideState): Pair<Int, Int> = when (s.dial) {
+    fun scale(s: RideState): Pair<Int, Int> = scaleFor(s.dial, s)
+
+    /** Scale (bottom, top) for a dial showing [dial]'s value. */
+    fun scaleFor(dial: DialValue, s: RideState): Pair<Int, Int> = when (dial) {
         DialValue.SPEED -> {
             val kmh = s.scaleMaxKmh.coerceAtLeast(RideSettings.SCALE_OPTIONS_KMH.first())
             0 to if (s.units.imperialDistance) Units.mphScale(kmh) else kmh
@@ -399,6 +427,7 @@ object RideGauge {
             StatusValue.GRADE -> value(s.gradePct?.let { oneDecimal(it) }, "GRADE %")
             StatusValue.ALTITUDE -> value(s.altitudeM?.let { u.elev(it).roundToInt().toString() }, "ALT ${u.elevation}")
             StatusValue.CLIMB -> value(s.climbM?.let { u.elev(it).roundToInt().toString() }, "CLIMB ${u.elevation}")
+            StatusValue.DISTANCE -> value(s.distanceKm?.let { oneDecimal(u.dist(it)) }, "DIST ${u.distance}")
             StatusValue.TO_FINISH -> value(s.toFinishKm?.let { oneDecimal(u.dist(it)) }, "TO FINISH ${u.distance}")
             StatusValue.NONE -> null
         }
@@ -415,7 +444,7 @@ object RideGauge {
             else -> v.label
         }
         fun box(value: String?, color: Int = NEUTRAL) = RideSlot(label, value, if (value == null) NEUTRAL else color)
-        return when (v) {
+        val slot = when (v) {
             RideSlotValue.SLOPE -> box(s.gradePct?.let { oneDecimal(it) }, s.gradePct?.let { slopeColor(it) } ?: NEUTRAL)
             RideSlotValue.CLOCK -> box(s.clock)
             RideSlotValue.CADENCE -> box(s.cadenceRpm?.toString(), s.cadenceRpm?.let { cadenceColor(it) } ?: NEUTRAL)
@@ -435,7 +464,28 @@ object RideGauge {
             RideSlotValue.TEMPERATURE -> box(s.temperatureC?.let { oneDecimal(u.temp(it)) })
             RideSlotValue.CALORIES -> box(s.calories?.toString())
         }
+        if (!s.miniDials) return slot
+        val (scale, value) = when (v) {
+            RideSlotValue.SLOPE -> (SLOPE_SCALE_MIN to SLOPE_SCALE_MAX) to s.gradePct
+            RideSlotValue.CADENCE -> scaleFor(DialValue.CADENCE, s) to s.cadenceRpm?.toDouble()
+            RideSlotValue.HEART_RATE -> scaleFor(DialValue.HEART_RATE, s) to s.heartRate?.toDouble()
+            RideSlotValue.POWER -> scaleFor(DialValue.POWER, s) to s.power?.toDouble()
+            RideSlotValue.POWER_3S -> scaleFor(DialValue.POWER, s) to s.power3s?.toDouble()
+            RideSlotValue.AVG_POWER -> scaleFor(DialValue.POWER, s) to s.avgPower?.toDouble()
+            RideSlotValue.NP -> scaleFor(DialValue.POWER, s) to s.np?.toDouble()
+            RideSlotValue.SPEED -> scaleFor(DialValue.SPEED, s) to s.kmh?.let { u.dist(it) }
+            RideSlotValue.AVG_SPEED -> scaleFor(DialValue.SPEED, s) to s.avgKmh?.let { u.dist(it) }
+            RideSlotValue.MAX_SPEED -> scaleFor(DialValue.SPEED, s) to s.maxKmh?.let { u.dist(it) }
+            else -> return slot
+        }
+        val (lo, hi) = scale
+        val pos = value?.let { ((it.coerceIn(lo.toDouble(), hi.toDouble()) - lo) / (hi - lo).coerceAtLeast(1)).toFloat() }
+        return slot.copy(gauge = SlotGauge(lo, hi, pos))
     }
+
+    /** Small slope dial: -10 % (descent) to +20 %. */
+    const val SLOPE_SCALE_MIN = -10
+    const val SLOPE_SCALE_MAX = 20
 
     /** Descent blue, flat turquoise, then yellow, pink and rose red as it gets steeper. */
     fun slopeColor(pct: Double): Int {

@@ -1,11 +1,22 @@
-# Karoo Ride Meter — testversie 1.3.0
+# Karoo Ride Meter — testversie 1.4.0
 
 Een grafisch dataveld voor de Hammerhead Karoo 3 (werkt volgens een tester ook op de Karoo 2; niet op de Karoo 1): snelheid op een wijzerplaat met cijfers,
 versnelling en accu van de elektronische schakeling (SRAM AXS, of Shimano Di2 via Ki2),
 afstand of gemiddelde snelheid, en drie ronde velden naar keuze.
 
-Bestand: `KarooRideMeter-1.3.0.apk`
-SHA-256: `e92b1fb3f92e7303d436284f399b529046670b8b4ed30299147fb8aabf37466a`
+Bestand: `KarooRideMeter-1.4.0.apk`
+SHA-256: `2065493a9e9adf7769eda6378dfdc6541361ee029938249a8728105f08b6b8f4`
+
+## Nieuw in 1.4.0
+
+- **Grotere afstand:** de afstand (of het gemiddelde) onder de waarde is groter en beter leesbaar.
+- **Zonering bij vermogen:** bij Ride Meter Power en Power 3s kleurt de ring tot aan de wijzer mee in je
+  vermogenszones. Die komen uit je FTP en zones in de Karoo-instellingen onder **Training metrics**.
+- **Afstand bovenin:** linksboven of rechtsboven kan nu ook **Distance** (gereden afstand) staan.
+- **Kleine wijzerplaten:** in de instellingen kun je de drie ronde velden als kleine wijzerplaat met naald tonen
+  (bij snelheid, vermogen, hartslag, cadans en helling). Kies bij **Round fields** voor *Small dial with needle*.
+- **Klassieke kleuren:** naast normaal (neon) en fel nu ook **Classic**: blauw, groen, geel, oranje en echt rood.
+- **Automatische updates:** vanaf deze versie kan de Karoo zelf melden dat er een nieuwe versie is.
 
 ## Nieuw in 1.3.0
 
@@ -30,14 +41,14 @@ SHA-256: `e92b1fb3f92e7303d436284f399b529046670b8b4ed30299147fb8aabf37466a`
 
 **Zonder computer (via je telefoon, getest met iPhone):**
 1. Open de releasepagina op je telefoon.
-2. Houd je vinger op `KarooRideMeter-1.3.0.apk` en kies **Delen** → de **Hammerhead**-app.
+2. Houd je vinger op `KarooRideMeter-1.4.0.apk` en kies **Delen** → de **Hammerhead**-app.
 3. Zorg dat de Karoo aan staat en met je telefoon verbonden is; bevestig de installatie op de Karoo.
 
 **Met een computer (adb):**
 1. Zet op de Karoo ontwikkelaarsopties en USB-debugging aan, en sluit hem aan.
-2. `adb install -r KarooRideMeter-1.3.0.apk`
+2. `adb install -r KarooRideMeter-1.4.0.apk`
 
-Een update over 1.1.x of 1.2.0 heen houdt je instellingen en velden.
+Een update over 1.1.x, 1.2.0 of 1.3.0 heen houdt je instellingen en velden.
 
 ## Gebruiken
 
@@ -48,8 +59,9 @@ Een update over 1.1.x of 1.2.0 heen houdt je instellingen en velden.
    - de schaal van de snelheid (0–30, 0–45, 0–60 of 0–90 km/h; bij imperial 0–20, 30, 40 of 60 mph),
    - wat er onder de snelheid staat (afstand of gemiddelde snelheid),
    - wat er linksboven en rechtsboven staat,
-   - de kleuren in de donkere modus,
-   - wat de drie ronde velden tonen (helling, cadans, hartslag, vermogen, enz.).
+   - de kleuren (normaal, fel of classic),
+   - wat de drie ronde velden tonen (helling, cadans, hartslag, vermogen, enz.), en of ze als getal of als
+     kleine wijzerplaat getoond worden.
 
 ## Schakeling (beide getest)
 
