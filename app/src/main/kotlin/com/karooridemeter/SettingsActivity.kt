@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
@@ -39,6 +40,9 @@ class SettingsActivity : Activity() {
     /** Round field style: false = number in a circle, true = small dial -> its radio button. Internal for tests. */
     internal val miniDialButtons = linkedMapOf<Boolean, RadioButton>()
 
+    /** "Done" buttons (top and bottom); both close the screen. Internal for tests. */
+    internal val doneButtons = mutableListOf<Button>()
+
     private val density get() = resources.displayMetrics.density
     private val pad get() = (16 * density).toInt()
 
@@ -49,11 +53,18 @@ class SettingsActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             setPadding(pad, pad, pad, pad)
         }
-        root.addView(TextView(this).apply {
-            text = getString(R.string.settings_title)
-            textSize = 22f
-            setTypeface(typeface, Typeface.BOLD)
+        // Title with a Done button: choices are saved straight away, Done just closes the screen.
+        root.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            addView(TextView(this@SettingsActivity).apply {
+                text = getString(R.string.settings_title)
+                textSize = 22f
+                setTypeface(typeface, Typeface.BOLD)
+            }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            addView(doneButton())
         })
+        root.addView(TextView(this).apply { text = getString(R.string.settings_saved_hint) })
 
         // Dial scale
         root.addView(sectionTitle(R.string.settings_speed_scale))
@@ -140,8 +151,19 @@ class SettingsActivity : Activity() {
             text = getString(R.string.settings_note)
             setPadding(0, pad, 0, 0)
         })
+        root.addView(doneButton().apply { textSize = 20f }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT,
+        ).apply { topMargin = pad })
 
         setContentView(ScrollView(this).apply { addView(root) })
+    }
+
+    private fun doneButton() = Button(this).apply {
+        text = getString(R.string.settings_done)
+        textSize = 18f
+        minHeight = (48 * density).toInt()
+        setOnClickListener { finish() }
+        doneButtons += this
     }
 
     /** One radio button per option; the current one checked; [save] on change. */

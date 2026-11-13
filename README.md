@@ -70,12 +70,30 @@ APK: `app/build/outputs/apk/release/app-release.apk`. Tester notes: `TESTERS.md`
 
 ## Install on the Karoo
 
+**With your phone (Karoo 3, Hammerhead app):** open the
+[latest release](https://github.com/Ericbakkertje/karoo-ride-meter/releases/latest) on your phone, long-press the
+`.apk` file and choose **Share → Hammerhead**. Keep the Karoo on, awake and on Wi-Fi.
+
+> **Android tip:** if you get "transfer failed", Android probably shared the release page instead of the APK. Send
+> yourself the direct link (for example by email):
+> `https://github.com/Ericbakkertje/karoo-ride-meter/releases/latest/download/KarooRideMeter-<version>.apk`,
+> then tap it there and choose **Share → Hammerhead**.
+
+**With a computer:**
+
 ```bash
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb install -r KarooRideMeter-<version>.apk
 ```
 
 Then add the field from the page editor: **Ride Meter → Ride Meter** (or Ride Meter Power / Power 3s / Heart Rate / Cadence). For Shimano Di2 gear data, add the
 Di2 in the Karoo as a sensor (Sensors → + → Extensions → Ki2).
+
+## Settings
+
+All settings are in a separate app on the Karoo: open **Ride Meter Settings** from the Karoo's list of apps (not in
+the page editor). There you choose the speed scale, what is under the speed (distance or average speed), the two
+spots above the dial, the colours, and the three round fields (and whether they are numbers or small dials).
+Every choice is saved straight away; tap **Done** (or the back button) to leave. An open Ride Meter updates within a second.
 
 ## License
 

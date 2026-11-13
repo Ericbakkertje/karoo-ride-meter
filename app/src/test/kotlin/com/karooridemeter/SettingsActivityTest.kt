@@ -97,4 +97,15 @@ class SettingsActivityTest {
         activity.miniDialButtons.getValue(true).performClick()
         assertEquals(true, RideSettings.miniDials(context))
     }
+
+    @Test
+    fun doneButtonsCloseTheScreen() {
+        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        assertEquals(2, activity.doneButtons.size)
+        activity.doneButtons.first().performClick()
+        assertTrue(activity.isFinishing)
+        val again = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        again.doneButtons.last().performClick()
+        assertTrue(again.isFinishing)
+    }
 }
