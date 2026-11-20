@@ -263,3 +263,13 @@ Every GitHub release gets three assets: the APK, `manifest.json` (update check o
 6. Campagnolo tester to confirm the battery now says "Campa".
 7. Keep watching for the Karoo ride-app out-of-memory crash on long rides.
 8. Needle feels jumpy on the power dial (user, ride 2026-11-12): power streams ~1/s and the needle jumps straight to the new value (render loop max 2/s, only on change). Idea: ease the needle in ~4 frames/s (value text stays real). User: "leave it for now"; measure memory/battery first if picked up (OOM concern).
+
+## 1.5.0 (tester feedback, forum 2026-11-15; built 2026-11-20 as versionCode 10, not released yet)
+
+Agreed with the user: 2, 3, 4 and 5 go into the next test build (previews first); 1 needs a closer look.
+
+- [x] **Top spots bigger (2):** (built 2026-11-20, Settings "Labels of the top spots": beside (default) / under / none) label beside the value (left spot: label left of the value; right spot: label right of it) and a Settings option to hide the labels so the value can grow.
+- [x] **Zone colours (3):** (built 2026-11-20: HR ring on the HR dial; colour style "Karoo zones" = grey, blue, green, yellow, orange, red, purple; HR 5 zones grey, blue, green, orange, red; not checked against the Karoo screen yet) HR zones in the main-dial ring like power already has. Karoo-ext 1.1.9 only gives zone min/max, NOT the Karoo's zone colours (checked `UserProfile.Zone`), so add a colour style "Karoo" that copies Hammerhead's default zone colours.
+- [x] **% of max HR (4):** (built 2026-11-20: round field "HR %MAX" (small dial 50-100 %) and top spot, zone coloured) new choice for the round fields (and maybe the dial), from `UserProfile.maxHr`.
+- [x] **Grade at the top in colour (5):** (built 2026-11-20, always on for Grade) coloured block behind the grade value in the top spots, using `slopeColor`.
+- [x] **Bigger bottom circles (1):** (built 2026-11-20 as a choice "Round fields in a triangle": fields x1.15, dial shrinks ~16 % on 478x721; default stays the row. Numbers in all round fields bigger (0.38 d / mini 0.32 d). Waiting for the user's preview verdict.) Original idea: middle circle down to the bottom edge, outer two up beside the open bottom of the dial, so all three can be ~20-25% bigger; also a bigger number in the small dials (now d*0.27). Previews before building.

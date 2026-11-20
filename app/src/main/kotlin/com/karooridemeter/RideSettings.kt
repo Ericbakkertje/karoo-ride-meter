@@ -13,6 +13,8 @@ object RideSettings {
     private const val KEY_DARK_BRIGHT = "dark_bright_colors"
     private const val KEY_COLOR_STYLE = "color_style"
     private const val KEY_MINI_DIALS = "round_mini_dials"
+    private const val KEY_STATUS_LABELS = "status_labels"
+    private const val KEY_TRIANGLE = "round_triangle"
 
     /** Dial scale: each option ends on a numbered tick (see RideRenderer.tickSteps). */
     const val DEFAULT_SCALE_MAX_KMH = 60
@@ -78,9 +80,23 @@ object RideSettings {
         prefs(context).edit().putBoolean(KEY_MINI_DIALS, on).apply()
     }
 
+    /** How the spots above the dial show their label. Default: beside the value. */
+    fun statusLabels(context: Context): StatusLabels = StatusLabels.fromName(prefs(context).getString(KEY_STATUS_LABELS, null))
+
+    fun setStatusLabels(context: Context, value: StatusLabels) {
+        prefs(context).edit().putString(KEY_STATUS_LABELS, value.name).apply()
+    }
+
+    /** Round fields in a triangle (bigger, dial a bit smaller) instead of a row. Tall fields only. Default: row. */
+    fun triangleFields(context: Context): Boolean = prefs(context).getBoolean(KEY_TRIANGLE, false)
+
+    fun setTriangleFields(context: Context, on: Boolean) {
+        prefs(context).edit().putBoolean(KEY_TRIANGLE, on).apply()
+    }
+
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 }
 
-/** Ring colours chosen in Settings. Light mode uses bright for [NEON] and [BRIGHT]. */
-enum class ColorStyle { NEON, BRIGHT, CLASSIC }
+/** Ring colours chosen in Settings. Light mode uses bright for [NEON] and [BRIGHT]. [KAROO]: training-zone colours. */
+enum class ColorStyle { NEON, BRIGHT, CLASSIC, KAROO }

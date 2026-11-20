@@ -47,7 +47,13 @@ object GaugePalette {
  * dark text. Light mode always uses the bright ring colours, which stay readable on a light background;
  * dark mode uses them only when chosen in Settings.
  */
-data class RideTheme(val light: Boolean = false, val brightColors: Boolean = false, val classic: Boolean = false) {
+data class RideTheme(
+    val light: Boolean = false,
+    val brightColors: Boolean = false,
+    val classic: Boolean = false,
+    /** Training-zone colours (grey, blue, green, yellow, orange, red, purple), like the Karoo and Garmin. */
+    val karoo: Boolean = false,
+) {
     val bright: Boolean get() = light || brightColors
 
     val background: Int get() = if (light) 0xFFF4F6FA.toInt() else GaugePalette.BACKGROUND
@@ -63,9 +69,13 @@ data class RideTheme(val light: Boolean = false, val brightColors: Boolean = fal
         if (c == RideGauge.NEUTRAL) return if (light) LIGHT_NEUTRAL else c
         val i = GaugePalette.ZONES.indexOf(c)
         if (i < 0) return c
+        if (karoo) return (if (light) KAROO_LIGHT_ZONES else KAROO_ZONES)[i]
         if (classic) return (if (light) CLASSIC_LIGHT_ZONES else CLASSIC_ZONES)[i]
         return if (bright) BRIGHT_ZONES[i] else c
     }
+
+    /** Battery level colour: "good" is green in every style (in the zone styles index 1 is blue). */
+    fun levelColor(c: Int): Int = if (karoo && c == GaugePalette.ZONES[1]) color(GaugePalette.ZONES[2]) else color(c)
 
     companion object {
         val DARK = RideTheme()
@@ -98,6 +108,31 @@ data class RideTheme(val light: Boolean = false, val brightColors: Boolean = fal
             0xFF0050D8.toInt(), // 1 blue
             0xFF00A03A.toInt(), // 2 green
             0xFF7DB800.toInt(), // 3 lime
+            0xFFE0B000.toInt(), // 4 yellow
+            0xFFF06000.toInt(), // 5 orange
+            0xFFE00000.toInt(), // 6 red
+            0xFF8A1FE0.toInt(), // 7 purple
+        )
+
+        /**
+         * "Karoo" zone colours (chosen in Settings), the usual training-zone scheme: Z1 grey, Z2 blue, Z3 green,
+         * Z4 yellow, Z5 orange, Z6 red, Z7 purple (same order as [GaugePalette.ZONES]).
+         */
+        val KAROO_ZONES = intArrayOf(
+            0xFF9AA4B2.toInt(), // 1 grey
+            0xFF2D7DFF.toInt(), // 2 blue
+            0xFF00D84A.toInt(), // 3 green
+            0xFFFFE000.toInt(), // 4 yellow
+            0xFFFF7A00.toInt(), // 5 orange
+            0xFFFF1A1A.toInt(), // 6 red
+            0xFFB33CFF.toInt(), // 7 purple
+        )
+
+        /** [KAROO_ZONES] a bit deeper, for the light card. */
+        val KAROO_LIGHT_ZONES = intArrayOf(
+            0xFF6B7585.toInt(), // 1 grey
+            0xFF0050D8.toInt(), // 2 blue
+            0xFF00A03A.toInt(), // 3 green
             0xFFE0B000.toInt(), // 4 yellow
             0xFFF06000.toInt(), // 5 orange
             0xFFE00000.toInt(), // 6 red

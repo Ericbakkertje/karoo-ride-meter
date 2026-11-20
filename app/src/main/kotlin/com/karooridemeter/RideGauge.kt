@@ -129,6 +129,7 @@ enum class StatusValue(val settingsName: String) {
     GEAR("Gear (52 / 17)"),
     TEMPERATURE("Temperature"),
     GRADE("Grade (%)"),
+    HR_PCT_MAX("Heart rate, % of max"),
     ALTITUDE("Altitude"),
     CLIMB("Elevation gain"),
     DISTANCE("Distance"),
@@ -143,10 +144,27 @@ enum class StatusValue(val settingsName: String) {
     }
 }
 
-/** One spot in the status row: the battery block, or a value with a small label under it. */
+/** How the spots above the dial show their label. Chosen in Settings. */
+enum class StatusLabels(val settingsName: String) {
+    /** Label beside the value, on the dial's side; the value is big. */
+    BESIDE("Label beside the value (bigger value)"),
+    /** Label under the value (as before 1.5.0). */
+    UNDER("Label under the value"),
+    /** No label; the value as big as possible. */
+    HIDDEN("No label (biggest value)"),
+    ;
+
+    companion object {
+        val DEFAULT = BESIDE
+        fun fromName(name: String?) = entries.firstOrNull { it.name == name } ?: DEFAULT
+    }
+}
+
+/** One spot in the status row: the battery block, or a value with a small label. */
 sealed class StatusItem {
     data class Battery(val battery: ShiftBattery?) : StatusItem()
-    data class Value(val text: String, val label: String, val known: Boolean) : StatusItem()
+    /** [color] set = the value is drawn on a block of that (zone) colour, like the grade. */
+    data class Value(val text: String, val label: String, val known: Boolean, val color: Int? = null) : StatusItem()
 }
 
 /** What a Ride Meter box can show. Chosen per box in Settings; [label] is drawn in the box. */
@@ -156,6 +174,7 @@ enum class RideSlotValue(val label: String, val settingsName: String) {
     CLOCK("NOW", "Time of day"),
     CADENCE("CADENCE", "Cadence (rpm)"),
     HEART_RATE("HR", "Heart rate (bpm)"),
+    HR_PCT_MAX("HR %MAX", "Heart rate, % of max"),
     POWER("POWER", "Power (W)"),
     POWER_3S("POWER 3s", "Power, 3-second average (W)"),
     POWER_TO_WEIGHT("W/KG", "Power to weight (W/kg)"),
@@ -268,8 +287,14 @@ data class RideState(
     val brightColors: Boolean = false,
     /** Classic colours (blue, green, yellow, orange, red) instead of neon, chosen in Settings. */
     val classicColors: Boolean = false,
+    /** Training-zone colours like the Karoo (grey, blue, green, yellow, orange, red), chosen in Settings. */
+    val karooColors: Boolean = false,
     /** Round fields as small dials with a needle (speed, power, heart rate, cadence, slope), chosen in Settings. */
     val miniDials: Boolean = false,
+    /** How the spots above the dial show their label. */
+    val statusLabels: StatusLabels = StatusLabels.DEFAULT,
+    /** Tall fields: middle round field down at the bottom edge, the outer two higher, all three bigger. */
+    val triangleFields: Boolean = false,
     val altitudeM: Double? = null,
     val toFinishKm: Double? = null,
     val gradePct: Double? = null,
@@ -318,11 +343,13 @@ data class RideModel(
     val statusLeft: StatusItem? = StatusItem.Battery(shiftBattery),
     val statusRight: StatusItem? = null,
     val theme: RideTheme = RideTheme.DARK,
-    /** Power dials: the zone colours along the ring (0..1 of the scale), drawn up to the needle. Empty = plain ring. */
+    /** Power and heart rate dials: the zone colours along the ring (0..1 of the scale), drawn up to the needle. Empty = plain ring. */
     val ringZones: List<RingZone> = emptyList(),
+    val statusLabels: StatusLabels = StatusLabels.DEFAULT,
+    val triangleFields: Boolean = false,
 )
 
-/** One power zone on the dial ring, from [from] to [to] (0..1 of the scale), in [color]. */
+/** One power or heart rate zone on the dial ring, from [from] to [to] (0..1 of the scale), in [color]. */
 data class RingZone(val from: Float, val to: Float, val color: Int)
 
 /** Turns raw ride values into a [RideModel]. Pure Kotlin, unit-tested on the Mac. */
@@ -374,19 +401,35 @@ object RideGauge {
             shiftBattery = s.shiftBattery,
             statusLeft = status(s.statusLeft, s),
             statusRight = status(s.statusRight, s),
-            theme = RideTheme(light = s.light, brightColors = s.brightColors, classic = s.classicColors),
-            ringZones = if (s.dial == DialValue.POWER || s.dial == DialValue.POWER_3S) ringZones(s.powerZones, scaleMin, scaleMax) else emptyList(),
+            theme = RideTheme(light = s.light, brightColors = s.brightColors, classic = s.classicColors, karoo = s.karooColors),
+            ringZones = when (s.dial) {
+                DialValue.POWER, DialValue.POWER_3S -> ringZones(s.powerZones, scaleMin, scaleMax)
+                DialValue.HEART_RATE -> hrRingZones(s.hrZones, scaleMin, scaleMax, s.karooColors)
+                else -> emptyList()
+            },
+            statusLabels = s.statusLabels,
+            triangleFields = s.triangleFields,
         )
     }
 
     /** Power zones as parts of the dial ring; zones outside the scale are left out. */
-    fun ringZones(zones: List<PowerZone>, scaleMin: Int, scaleMax: Int): List<RingZone> {
+    fun ringZones(zones: List<PowerZone>, scaleMin: Int, scaleMax: Int): List<RingZone> =
+        ringParts(zones.map { it.min }, scaleMin, scaleMax) { i -> GaugePalette.ZONES[i.coerceIn(0, GaugePalette.ZONES.lastIndex)] }
+
+    /** Heart rate zones as parts of the dial ring, in the same colours as the heart rate field. */
+    fun hrRingZones(zones: List<HrZone>, scaleMin: Int, scaleMax: Int, karoo: Boolean = false): List<RingZone> {
+        val colors = hrColors(zones.size, karoo)
+        return ringParts(zones.map { it.min }, scaleMin, scaleMax) { i -> colors[i.coerceIn(0, colors.lastIndex)] }
+    }
+
+    /** Zones starting at [mins] as ring parts (0..1 of the scale); the first starts at the bottom, the last runs to the top. */
+    private fun ringParts(mins: List<Int>, scaleMin: Int, scaleMax: Int, color: (Int) -> Int): List<RingZone> {
         val range = (scaleMax - scaleMin).coerceAtLeast(1).toFloat()
-        fun f(w: Int) = ((w - scaleMin) / range).coerceIn(0f, 1f)
-        return zones.mapIndexedNotNull { i, z ->
-            val from = if (i == 0) 0f else f(z.min)
-            val to = if (i == zones.lastIndex) 1f else f(zones[i + 1].min)
-            if (to > from) RingZone(from, to, GaugePalette.ZONES[i.coerceIn(0, GaugePalette.ZONES.lastIndex)]) else null
+        fun f(v: Int) = ((v - scaleMin) / range).coerceIn(0f, 1f)
+        return mins.indices.mapNotNull { i ->
+            val from = if (i == 0) 0f else f(mins[i])
+            val to = if (i == mins.lastIndex) 1f else f(mins[i + 1])
+            if (to > from) RingZone(from, to, color(i)) else null
         }
     }
 
@@ -425,6 +468,9 @@ object RideGauge {
             )
             StatusValue.TEMPERATURE -> value(s.temperatureC?.let { oneDecimal(u.temp(it)) }, "TEMP ${u.temperature}")
             StatusValue.GRADE -> value(s.gradePct?.let { oneDecimal(it) }, "GRADE %")
+                .copy(color = s.gradePct?.let { slopeColor(it, s.karooColors) })
+            StatusValue.HR_PCT_MAX -> value(hrPctMax(s)?.toString(), "HR %MAX")
+                .copy(color = s.heartRate?.takeIf { hrPctMax(s) != null && s.hrZones.isNotEmpty() }?.let { hrColor(it, s.hrZones, s.karooColors) })
             StatusValue.ALTITUDE -> value(s.altitudeM?.let { u.elev(it).roundToInt().toString() }, "ALT ${u.elevation}")
             StatusValue.CLIMB -> value(s.climbM?.let { u.elev(it).roundToInt().toString() }, "CLIMB ${u.elevation}")
             StatusValue.DISTANCE -> value(s.distanceKm?.let { oneDecimal(u.dist(it)) }, "DIST ${u.distance}")
@@ -445,10 +491,11 @@ object RideGauge {
         }
         fun box(value: String?, color: Int = NEUTRAL) = RideSlot(label, value, if (value == null) NEUTRAL else color)
         val slot = when (v) {
-            RideSlotValue.SLOPE -> box(s.gradePct?.let { oneDecimal(it) }, s.gradePct?.let { slopeColor(it) } ?: NEUTRAL)
+            RideSlotValue.SLOPE -> box(s.gradePct?.let { oneDecimal(it) }, s.gradePct?.let { slopeColor(it, s.karooColors) } ?: NEUTRAL)
             RideSlotValue.CLOCK -> box(s.clock)
-            RideSlotValue.CADENCE -> box(s.cadenceRpm?.toString(), s.cadenceRpm?.let { cadenceColor(it) } ?: NEUTRAL)
-            RideSlotValue.HEART_RATE -> box(s.heartRate?.toString(), s.heartRate?.let { hrColor(it, s.hrZones) } ?: NEUTRAL)
+            RideSlotValue.CADENCE -> box(s.cadenceRpm?.toString(), s.cadenceRpm?.let { cadenceColor(it, s.karooColors) } ?: NEUTRAL)
+            RideSlotValue.HEART_RATE -> box(s.heartRate?.toString(), s.heartRate?.let { hrColor(it, s.hrZones, s.karooColors) } ?: NEUTRAL)
+            RideSlotValue.HR_PCT_MAX -> box(hrPctMax(s)?.toString(), s.heartRate?.let { hrColor(it, s.hrZones, s.karooColors) } ?: NEUTRAL)
             RideSlotValue.POWER -> box(s.power?.toString(), s.power?.let { powerColor(it, s.powerZones) } ?: NEUTRAL)
             RideSlotValue.POWER_3S -> box(s.power3s?.toString(), s.power3s?.let { powerColor(it, s.powerZones) } ?: NEUTRAL)
             RideSlotValue.POWER_TO_WEIGHT -> box(s.powerToWeight?.let { String.format(Locale.US, "%.2f", it) })
@@ -469,6 +516,7 @@ object RideGauge {
             RideSlotValue.SLOPE -> (SLOPE_SCALE_MIN to SLOPE_SCALE_MAX) to s.gradePct
             RideSlotValue.CADENCE -> scaleFor(DialValue.CADENCE, s) to s.cadenceRpm?.toDouble()
             RideSlotValue.HEART_RATE -> scaleFor(DialValue.HEART_RATE, s) to s.heartRate?.toDouble()
+            RideSlotValue.HR_PCT_MAX -> (HR_PCT_SCALE_MIN to HR_PCT_SCALE_MAX) to hrPctMax(s)?.toDouble()
             RideSlotValue.POWER -> scaleFor(DialValue.POWER, s) to s.power?.toDouble()
             RideSlotValue.POWER_3S -> scaleFor(DialValue.POWER, s) to s.power3s?.toDouble()
             RideSlotValue.AVG_POWER -> scaleFor(DialValue.POWER, s) to s.avgPower?.toDouble()
@@ -483,29 +531,43 @@ object RideGauge {
         return slot.copy(gauge = SlotGauge(lo, hi, pos))
     }
 
+    /** Heart rate as a percentage of the max heart rate from the Karoo profile; null when either is unknown. */
+    fun hrPctMax(s: RideState): Int? {
+        val hr = s.heartRate ?: return null
+        val max = s.maxHr?.takeIf { it > 0 } ?: return null
+        return (hr * 100.0 / max).roundToInt()
+    }
+
+    /** Small "% of max heart rate" dial: 50 to 100 %. */
+    const val HR_PCT_SCALE_MIN = 50
+    const val HR_PCT_SCALE_MAX = 100
+
     /** Small slope dial: -10 % (descent) to +20 %. */
     const val SLOPE_SCALE_MIN = -10
     const val SLOPE_SCALE_MAX = 20
 
-    /** Descent blue, flat turquoise, then yellow, pink and rose red as it gets steeper. */
-    fun slopeColor(pct: Double): Int {
+    /**
+     * Descent blue, flat turquoise, then yellow, pink and rose red as it gets steeper.
+     * Karoo colours: descent blue, flat green, then yellow, orange, red.
+     */
+    fun slopeColor(pct: Double, karoo: Boolean = false): Int {
         val z = GaugePalette.ZONES
         return when {
-            pct < -2.0 -> z[0]
-            pct < 2.0 -> z[1]
+            pct < -2.0 -> if (karoo) z[1] else z[0]
+            pct < 2.0 -> if (karoo) z[2] else z[1]
             pct < 5.0 -> z[3]
             pct < 8.0 -> z[4]
             else -> z[5]
         }
     }
 
-    /** Low cadence yellow, 70-99 rpm turquoise, 100+ purple; 0 (coasting) neutral. */
-    fun cadenceColor(rpm: Int): Int {
+    /** Low cadence yellow, 70-99 rpm turquoise (green in Karoo colours), 100+ purple; 0 (coasting) neutral. */
+    fun cadenceColor(rpm: Int, karoo: Boolean = false): Int {
         val z = GaugePalette.ZONES
         return when {
             rpm <= 0 -> NEUTRAL
             rpm < 70 -> z[3]
-            rpm < 100 -> z[1]
+            rpm < 100 -> if (karoo) z[2] else z[1]
             else -> z[6]
         }
     }
@@ -515,8 +577,15 @@ object RideGauge {
         if (zones.isEmpty()) NEUTRAL else GaugePalette.ZONES[PowerZones.zoneIndex(watts, zones).coerceIn(0, 6)]
 
     /** Color of the heart rate zone (same colors as the Heart Rate Meter). */
-    fun hrColor(bpm: Int, zones: List<HrZone>): Int =
-        if (zones.isEmpty()) NEUTRAL else GaugePalette.segmentColors(zones.size)[HeartRateZones.zoneIndex(bpm, zones)]
+    fun hrColor(bpm: Int, zones: List<HrZone>, karoo: Boolean = false): Int =
+        if (zones.isEmpty()) NEUTRAL else hrColors(zones.size, karoo)[HeartRateZones.zoneIndex(bpm, zones)]
+
+    /**
+     * Colours for [count] heart rate zones. Karoo colours with 5 zones: grey, blue, green, orange, red
+     * (Z1, Z2, Z3, Z5, Z6 of the power set), as on the Karoo and Garmin.
+     */
+    fun hrColors(count: Int, karoo: Boolean = false): List<Int> =
+        if (karoo && count == 5) listOf(0, 1, 2, 4, 5).map { GaugePalette.ZONES[it] } else GaugePalette.segmentColors(count)
 
     /** "0:46", "2:21" (hours:minutes). */
     fun duration(sec: Long): String {

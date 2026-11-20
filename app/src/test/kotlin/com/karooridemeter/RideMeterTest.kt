@@ -83,7 +83,7 @@ class RideMeterTest {
         val full = state().copy(
             heartRate = 150, power = 240, power3s = 230, powerToWeight = 3.1234, avgPower = 167, np = 181,
             avgKmh = 26.1, maxKmh = 38.3, climbM = 412.6, temperatureC = 4.5, calories = 1234,
-            powerZones = PowerZones.fromFtp(199), hrZones = HeartRateZones.fromMaxHr(182),
+            powerZones = PowerZones.fromFtp(199), hrZones = HeartRateZones.fromMaxHr(182), maxHr = 182,
         )
         for (v in RideSlotValue.entries) {
             val slot = RideGauge.slot(v, full)
@@ -526,5 +526,103 @@ class RideMeterTest {
         assertEquals(RideTheme.CLASSIC_LIGHT_ZONES[5], RideTheme(light = true, classic = true).color(GaugePalette.ZONES[5]))
         assertEquals(RideGauge.NEUTRAL, RideTheme(classic = true).color(RideGauge.NEUTRAL))
         assertEquals(true, RideGauge.model(RideState(kmh = 1.0, scaleMaxKmh = 60, classicColors = true)).theme.classic)
+    }
+
+    @Test
+    fun heartRatePercentOfMax() {
+        val s = RideState(kmh = 20.0, scaleMaxKmh = 60, heartRate = 150, maxHr = 182, hrZones = HeartRateZones.fromMaxHr(182), miniDials = true)
+        assertEquals(82, RideGauge.hrPctMax(s))
+        val slot = RideGauge.slot(RideSlotValue.HR_PCT_MAX, s)
+        assertEquals("82", slot.value)
+        assertEquals("HR %MAX", slot.label)
+        assertEquals(GaugePalette.HR_ZONES[3], slot.color)
+        assertEquals(SlotGauge(50, 100, 0.64f), slot.gauge)
+        // Unknown max heart rate or no heart rate: "--".
+        assertNull(RideGauge.slot(RideSlotValue.HR_PCT_MAX, s.copy(maxHr = 0)).value)
+        assertNull(RideGauge.slot(RideSlotValue.HR_PCT_MAX, s.copy(heartRate = null)).value)
+        assertEquals("82", (RideGauge.status(StatusValue.HR_PCT_MAX, s) as StatusItem.Value).text)
+    }
+
+    @Test
+    fun gradeInTopSpotHasZoneColour() {
+        val s = RideState(kmh = 20.0, scaleMaxKmh = 60, gradePct = 6.0)
+        assertEquals(GaugePalette.ZONES[4], (RideGauge.status(StatusValue.GRADE, s) as StatusItem.Value).color)
+        assertEquals(null, (RideGauge.status(StatusValue.GRADE, s.copy(gradePct = null)) as StatusItem.Value).color)
+        assertEquals(null, (RideGauge.status(StatusValue.ALTITUDE, s) as StatusItem.Value).color)
+        assertEquals(0xFF0B1020.toInt(), RideRenderer.onColor(0xFFFFE000.toInt()))
+        assertEquals(0xFFFFFFFF.toInt(), RideRenderer.onColor(0xFF0050D8.toInt()))
+    }
+
+    @Test
+    fun karooColoursFollowTheTrainingZoneScheme() {
+        val t = RideTheme(karoo = true)
+        // Power Z1 grey, Z3 green, Z6 red.
+        assertEquals(RideTheme.KAROO_ZONES[0], t.color(RideGauge.powerColor(100, PowerZones.fromFtp(250))))
+        assertEquals(RideTheme.KAROO_ZONES[2], t.color(RideGauge.powerColor(210, PowerZones.fromFtp(250))))
+        // Heart rate 5 zones: grey, blue, green, orange, red.
+        val hr = HeartRateZones.fromMaxHr(190)
+        assertEquals(listOf(0, 1, 2, 4, 5).map { RideTheme.KAROO_ZONES[it] }, RideGauge.hrColors(5, karoo = true).map { t.color(it) })
+        assertEquals(RideTheme.KAROO_ZONES[2], t.color(RideGauge.hrColor(hr[2].min + 1, hr, karoo = true)))
+        // Flat road green, battery "good" green.
+        assertEquals(RideTheme.KAROO_ZONES[2], t.color(RideGauge.slopeColor(0.5, karoo = true)))
+        assertEquals(RideTheme.KAROO_ZONES[2], t.levelColor(DrivetrainBattery.GOOD.color))
+        assertEquals(true, RideGauge.model(RideState(kmh = 1.0, scaleMaxKmh = 60, karooColors = true)).theme.karoo)
+    }
+
+    @Test
+    fun heartRateDialGetsZoneRing() {
+        val s = RideState(kmh = 20.0, scaleMaxKmh = 60, dial = DialValue.HEART_RATE, heartRate = 150, maxHr = 190, hrZones = HeartRateZones.fromMaxHr(190))
+        val zones = RideGauge.model(s).ringZones
+        assertEquals(5, zones.size)
+        assertEquals(0f, zones.first().from, 1e-4f)
+        assertEquals(1f, zones.last().to, 1e-4f)
+        assertEquals(GaugePalette.HR_ZONES, zones.map { it.color })
+        assertTrue(RideGauge.model(s.copy(dial = DialValue.CADENCE)).ringZones.isEmpty())
+    }
+
+    @Test
+    fun triangleFieldsAreBiggerAndStayInside() {
+        for ((w, h) in listOf(478 to 721, 480 to 800, 240 to 400, 320 to 533)) {
+            val row = RideRenderer.layout(w, h)
+            val tri = RideRenderer.layout(w, h, triangle = true)
+            assertEquals(3, tri.fields.size)
+            assertTrue("$w x $h bigger", tri.fields[0].diameter > row.fields[0].diameter * 1.1f)
+            for (f in tri.fields) {
+                assertTrue("$w x $h inside", f.cx - f.diameter / 2 >= 0 && f.cx + f.diameter / 2 <= w && f.cy + f.diameter / 2 <= h)
+                // Clear of the dial ring.
+                val dist = kotlin.math.hypot((f.cx - tri.cx).toDouble(), (f.cy - tri.cy).toDouble())
+                assertTrue("$w x $h clear of dial", dist >= tri.radius + f.diameter / 2 - 0.5)
+            }
+            // Middle field on the bottom edge, below the outer two.
+            assertTrue(tri.fields[1].cy > tri.fields[0].cy)
+        }
+        // Wide fields ignore it.
+        assertEquals(RideRenderer.layout(478, 228), RideRenderer.layout(478, 228, triangle = true))
+    }
+
+    @Test
+    fun writes150Previews() {
+        val base = state().copy(
+            heartRate = 150, maxHr = 186, power = 240, power3s = 236, ftp = 250, gradePct = 6.2,
+            powerZones = PowerZones.fromFtp(250), hrZones = HeartRateZones.fromMaxHr(186),
+            statusLeft = StatusValue.GRADE, statusRight = StatusValue.HR_PCT_MAX,
+            slots = listOf(RideSlotValue.SLOPE, RideSlotValue.HR_PCT_MAX, RideSlotValue.POWER_3S),
+        )
+        val cases = listOf(
+            "old_under" to base.copy(statusLabels = StatusLabels.UNDER),
+            "beside" to base,
+            "hidden" to base.copy(statusLabels = StatusLabels.HIDDEN),
+            "karoo" to base.copy(karooColors = true),
+            "karoo_hrdial" to base.copy(karooColors = true, dial = DialValue.HEART_RATE),
+            "neon_hrdial" to base.copy(dial = DialValue.HEART_RATE),
+            "row_minidials" to base.copy(miniDials = true, karooColors = true),
+            "triangle_minidials" to base.copy(miniDials = true, karooColors = true, triangleFields = true),
+            "triangle_numbers" to base.copy(triangleFields = true),
+            "karoo_light" to base.copy(karooColors = true, light = true, miniDials = true),
+        )
+        for ((name, s) in cases) {
+            val bmp = RideRenderer.render(RideGauge.model(s), 478, 721, Bitmap.Config.ARGB_8888)
+            File(outDir, "v150_$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        }
     }
 }

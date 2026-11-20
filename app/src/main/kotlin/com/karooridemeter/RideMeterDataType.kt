@@ -162,7 +162,10 @@ class RideMeterDataType(
                     light = isLightMode(appContext),
                     brightColors = RideSettings.colorStyle(appContext) == ColorStyle.BRIGHT,
                     classicColors = RideSettings.colorStyle(appContext) == ColorStyle.CLASSIC,
+                    karooColors = RideSettings.colorStyle(appContext) == ColorStyle.KAROO,
                     miniDials = RideSettings.miniDials(appContext),
+                    statusLabels = RideSettings.statusLabels(appContext),
+                    triangleFields = RideSettings.triangleFields(appContext),
                     altitudeM = values[DataType.Type.PRESSURE_ELEVATION_CORRECTION],
                     // Metres, like DISTANCE (matched the Karoo on a route, 2026-11-09); only streams while following a route.
                     toFinishKm = values[DataType.Type.DISTANCE_TO_DESTINATION]?.let { (it / 1000.0).coerceAtLeast(0.0) },

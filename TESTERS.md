@@ -1,11 +1,26 @@
-# Karoo Ride Meter — testversie 1.4.1
+# Karoo Ride Meter — testversie 1.5.0
 
 Een grafisch dataveld voor de Hammerhead Karoo 3 (werkt volgens een tester ook op de Karoo 2; niet op de Karoo 1): snelheid op een wijzerplaat met cijfers,
 versnelling en accu van de elektronische schakeling (SRAM AXS, of Shimano Di2 via Ki2),
 afstand of gemiddelde snelheid, en drie ronde velden naar keuze.
 
-Bestand: `KarooRideMeter-1.4.1.apk`
-SHA-256: `29b26165f6bcc85e640ccd7c41dabb6cab5b2008bc64df9b33f182d2acf7b283`
+Bestand: `KarooRideMeter-1.5.0.apk`
+SHA-256: `19dd4578e0f114f6a626ab8a9cf28c1a6d900c70f03c9798ee3377accbef0461`
+
+## Nieuw in 1.5.0
+
+Met dank aan een tester op het forum:
+
+- **Grotere waarden bovenaan:** het label staat nu naast de waarde (links: waarde dan label, rechts: label dan waarde),
+  zodat de waarde veel groter kan. In de instellingen bij **Labels of the top spots** kies je ook *onder de waarde*
+  (zoals eerst) of *geen label* (grootst).
+- **Stijging bovenaan in kleur:** staat Grade bovenaan, dan staat de waarde op een blokje in de kleur van de helling.
+- **Hartslag in % van je max:** nieuwe keuze *Heart rate, % of max* voor de ronde velden en de plekken bovenaan.
+  Gebruikt de max hartslag uit je Karoo-profiel.
+- **Zonering bij hartslag:** bij Ride Meter Heart Rate kleurt de ring nu ook mee in je hartslagzones.
+- **Kleurstijl "Karoo zones":** grijs, blauw, groen, geel, oranje, rood (en paars voor Z7), het gebruikelijke zoneschema.
+- **Grotere cijfers** in de ronde velden. Nieuw en optioneel: **Round fields in a triangle**: het middelste veld
+  zakt naar de onderrand, alle drie worden groter; de grote wijzerplaat wordt daarvoor wat kleiner.
 
 ## Nieuw in 1.4.1
 
@@ -46,17 +61,17 @@ SHA-256: `29b26165f6bcc85e640ccd7c41dabb6cab5b2008bc64df9b33f182d2acf7b283`
 
 **Zonder computer (via je telefoon, getest met iPhone):**
 1. Open de releasepagina op je telefoon.
-2. Houd je vinger op `KarooRideMeter-1.4.1.apk` en kies **Delen** → de **Hammerhead**-app.
+2. Houd je vinger op `KarooRideMeter-1.5.0.apk` en kies **Delen** → de **Hammerhead**-app.
 3. Zorg dat de Karoo aan staat en met je telefoon verbonden is; bevestig de installatie op de Karoo.
 
 **Android-tip:** krijg je "transfer failed", dan deelde Android waarschijnlijk de releasepagina in plaats van de APK.
 Stuur jezelf de directe link (bijvoorbeeld per e-mail):
-`https://github.com/Ericbakkertje/karoo-ride-meter/releases/latest/download/KarooRideMeter-1.4.1.apk`,
+`https://github.com/Ericbakkertje/karoo-ride-meter/releases/latest/download/KarooRideMeter-1.5.0.apk`,
 tik hem daar aan en kies **Delen** → **Hammerhead**.
 
 **Met een computer (adb):**
 1. Zet op de Karoo ontwikkelaarsopties en USB-debugging aan, en sluit hem aan.
-2. `adb install -r KarooRideMeter-1.4.1.apk`
+2. `adb install -r KarooRideMeter-1.5.0.apk`
 
 Een update over 1.1.x, 1.2.0, 1.3.0 of 1.4.0 heen houdt je instellingen en velden.
 

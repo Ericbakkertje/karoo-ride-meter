@@ -8,14 +8,17 @@ A combined graphical data field for the Hammerhead Karoo 3 (also reported workin
   scale that fits (power from your FTP, heart rate 60–200, cadence 0–140) and speed in the first round field,
 - two spots above the dial, chosen in Settings: by default the shifting battery on the left (SRAM AXS level from
   the Karoo, or Shimano Di2 % from the [Ki2](https://github.com/valterc/ki2) extension) and the gear (front / rear
-  teeth) on the right; or distance, distance to finish, temperature, grade, altitude, elevation gain, or nothing
-  (for mechanical shifting; with both set to nothing the dial moves up),
+  teeth) on the right; or distance, distance to finish, temperature, grade (on a block in its colour), heart rate
+  as % of max, altitude, elevation gain, or nothing (for mechanical shifting; with both set to nothing the dial
+  moves up); big values with the label beside them, under them, or hidden,
 - distance or average speed under the speed (your choice), in big numbers,
-- on the power dials, the ring fills up to the needle in your power-zone colours (from your FTP and zones in the
-  Karoo settings under **Training metrics**),
-- three round fields you choose in "Ride Meter Settings" (slope, cadence, power, HR, …), coloured by your zones;
-  shown as a number in a coloured circle or as small dials with a needle,
-- colours: normal (neon), bright, or classic (blue, green, yellow, orange, real red),
+- on the power and heart rate dials, the ring fills up to the needle in your zone colours (from your FTP, max heart
+  rate and zones in the Karoo settings under **Training metrics**),
+- three round fields you choose in "Ride Meter Settings" (slope, cadence, power, HR, HR % of max, …), coloured by
+  your zones; shown as a number in a coloured circle or as small dials with a needle, in a row or in a triangle
+  (bigger round fields, slightly smaller dial),
+- colours: normal (neon), bright, classic (blue, green, yellow, orange, real red), or Karoo zones (grey, blue,
+  green, yellow, orange, red),
 - follows the Karoo's light or dark mode,
 - follows the Karoo's units: mph, mi, ft and °F when the Karoo is set to imperial.
 
@@ -31,7 +34,11 @@ A combined graphical data field for the Hammerhead Karoo 3 (also reported workin
 |---|---|---|
 | ![Round fields as small dials](docs/ride_meter_mini_dials_478x721.png) | ![Ride Meter Power, classic colours](docs/ride_meter_classic_power_478x721.png) | ![Average speed under the speed](docs/ride_meter_avg_speed_478x721.png) |
 
-_Rendered by the app's own drawing code (version 1.4.0) with example values. Overview: [docs/ride_meter_info_1.4.0.png](docs/ride_meter_info_1.4.0.png)._
+| Labels beside the values | Karoo zones, heart rate | Triangle layout |
+|---|---|---|
+| ![Grade and HR % of max above the dial](docs/ride_meter_top_labels_478x721.png) | ![Ride Meter Heart Rate, Karoo zone colours](docs/ride_meter_karoo_heart_rate_478x721.png) | ![Round fields in a triangle](docs/ride_meter_triangle_478x721.png) |
+
+_Rendered by the app's own drawing code (versions 1.4.0 and 1.5.0) with example values. Overview: [docs/ride_meter_info_1.4.0.png](docs/ride_meter_info_1.4.0.png)._
 
 Split off from Karoo Graphic Meter. Status: see `PROJECT_STATUS.md`. Testers: see `TESTERS.md`.
 
@@ -92,7 +99,8 @@ Di2 in the Karoo as a sensor (Sensors → + → Extensions → Ki2).
 
 All settings are in a separate app on the Karoo: open **Ride Meter Settings** from the Karoo's list of apps (not in
 the page editor). There you choose the speed scale, what is under the speed (distance or average speed), the two
-spots above the dial, the colours, and the three round fields (and whether they are numbers or small dials).
+spots above the dial (and how their labels show), the colours, and the three round fields (numbers or small dials,
+in a row or a triangle).
 Every choice is saved straight away; tap **Done** (or the back button) to leave. An open Ride Meter updates within a second.
 
 ## License

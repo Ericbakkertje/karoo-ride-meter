@@ -40,6 +40,12 @@ class SettingsActivity : Activity() {
     /** Round field style: false = number in a circle, true = small dial -> its radio button. Internal for tests. */
     internal val miniDialButtons = linkedMapOf<Boolean, RadioButton>()
 
+    /** Label style of the spots above the dial -> its radio button. Internal for tests. */
+    internal val statusLabelButtons = linkedMapOf<StatusLabels, RadioButton>()
+
+    /** Round field layout: false = in a row, true = triangle -> its radio button. Internal for tests. */
+    internal val triangleButtons = linkedMapOf<Boolean, RadioButton>()
+
     /** "Done" buttons (top and bottom); both close the screen. Internal for tests. */
     internal val doneButtons = mutableListOf<Button>()
 
@@ -113,6 +119,23 @@ class SettingsActivity : Activity() {
         root.addView(label(R.string.settings_status_right))
         statusRightSpinner = statusSpinner(RideSettings.statusRight(this)) { RideSettings.setStatusRight(this, it) }
         root.addView(statusRightSpinner)
+        root.addView(label(R.string.settings_status_labels))
+        val labelGroup = RadioGroup(this)
+        StatusLabels.entries.forEach { option ->
+            val button = RadioButton(this).apply {
+                id = View.generateViewId()
+                text = option.settingsName
+                textSize = 18f
+                minHeight = (48 * density).toInt()
+            }
+            labelGroup.addView(button)
+            statusLabelButtons[option] = button
+        }
+        statusLabelButtons[RideSettings.statusLabels(this)]?.let { labelGroup.check(it.id) }
+        labelGroup.setOnCheckedChangeListener { _, checkedId ->
+            statusLabelButtons.entries.firstOrNull { it.value.id == checkedId }?.let { RideSettings.setStatusLabels(this, it.key) }
+        }
+        root.addView(labelGroup)
 
         // Colours
         root.addView(sectionTitle(R.string.settings_dark_colors))
@@ -121,6 +144,7 @@ class SettingsActivity : Activity() {
                 ColorStyle.NEON to R.string.settings_dark_colors_normal,
                 ColorStyle.BRIGHT to R.string.settings_dark_colors_bright,
                 ColorStyle.CLASSIC to R.string.settings_colors_classic,
+                ColorStyle.KAROO to R.string.settings_colors_karoo,
             ),
             colorButtons, RideSettings.colorStyle(this),
         ) { RideSettings.setColorStyle(this, it) })
@@ -132,6 +156,10 @@ class SettingsActivity : Activity() {
             listOf(false to R.string.settings_round_number, true to R.string.settings_round_dial),
             miniDialButtons, RideSettings.miniDials(this),
         ) { RideSettings.setMiniDials(this, it) })
+        root.addView(radioGroup(
+            listOf(false to R.string.settings_round_row, true to R.string.settings_round_triangle),
+            triangleButtons, RideSettings.triangleFields(this),
+        ) { RideSettings.setTriangleFields(this, it) })
         val current = RideSettings.rideSlots(this)
         val names = listOf(R.string.settings_ride_box_1, R.string.settings_ride_box_2, R.string.settings_ride_box_3)
         names.forEachIndexed { i, nameRes ->

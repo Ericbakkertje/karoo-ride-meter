@@ -28,6 +28,9 @@ data class RideLayout(
     val statusIcon: Float = 8f,
     /** False when both status spots are set to "Nothing": no status row, the dial starts at [statusTop]. */
     val hasStatus: Boolean = true,
+    /** Left and right edge of the status row; the dial's edges unless the dial was made smaller (triangle). */
+    val statusMinX: Float = cx - radius,
+    val statusMaxX: Float = cx + radius,
 ) {
     /** Bottom of the status row (icon + one text line). */
     val statusBottom: Float get() = if (hasStatus) statusTop + statusIcon * STATUS_ROW else statusTop
@@ -64,7 +67,7 @@ object RideRenderer {
 
     fun angleFor(position: Float) = START_DEG + SWEEP_DEG * position.coerceIn(0f, 1f)
 
-    fun layout(width: Int, height: Int, statusRow: Boolean = true): RideLayout {
+    fun layout(width: Int, height: Int, statusRow: Boolean = true, triangle: Boolean = false): RideLayout {
         val w = width.toFloat()
         val h = height.toFloat()
         val pad = maxOf(3f, min(w, h) * 0.03f)
@@ -90,6 +93,9 @@ object RideRenderer {
             val top = statusBottom + gap
             val rowCy = top + r * (1f + BELOW) + pad + rowH / 2f
             val fields = (0..2).map { RideField(pad + it * (cw + pad) + cw / 2f, rowCy, min(cw, rowH)) }
+            if (triangle) triangleLayout(w, h, pad, gap, top, r, min(cw, rowH))?.let { (rt, tf) ->
+                return RideLayout(w / 2f, top + rt, rt, tf, pad, statusTop, icon, statusRow, w / 2f - r, w / 2f + r)
+            }
             return RideLayout(w / 2f, top + r, r, fields, pad, statusTop, icon, statusRow)
         }
         // Wide: status row + dial on the left, column of fields on the right.
@@ -114,6 +120,36 @@ object RideRenderer {
             )
         }
         return RideLayout(cx, cy, r, fields, pad, statusTop, icon, statusRow)
+    }
+
+    /** Triangle layout: round fields this much bigger than in a row; the dial gives up the room they need. */
+    const val TRIANGLE_GROWTH = 1.15f
+
+    /**
+     * Tall fields, "triangle": the middle round field sits on the bottom edge, the outer two in the bottom corners
+     * a bit higher, next to the open bottom of the dial. The fields get [TRIANGLE_GROWTH] times the row size and
+     * the dial is as big as still fits (it shrinks a little). Null when it does not fit (then the row is used).
+     */
+    private fun triangleLayout(w: Float, h: Float, pad: Float, gap: Float, top: Float, rowR: Float, rowD: Float): Pair<Float, List<RideField>>? {
+        val d = rowD * TRIANGLE_GROWTH
+        val my = h - pad - d / 2f
+        val ox = pad + d / 2f
+        val dx = w / 2f - ox
+        if (dx <= 0f) return null
+        val oy = my - sqrt(maxOf(0f, (d + gap) * (d + gap) - dx * dx))
+        // Biggest dial radius (centre at top + r) that keeps clear of the outer fields and of the middle field
+        // (whose top must stay under the distance line at 0.76 r below the centre).
+        fun fits(r: Float): Boolean {
+            val cy = top + r
+            val ddy = oy - cy
+            return sqrt(dx * dx + ddy * ddy) >= r + gap + d / 2f && cy + 0.76f * r <= my - d / 2f
+        }
+        var lo = 0f
+        var hi = rowR
+        if (fits(hi)) lo = hi else repeat(20) { val mid = (lo + hi) / 2f; if (fits(mid)) lo = mid else hi = mid }
+        if (lo < rowR * 0.6f) return null
+        val fields = listOf(RideField(ox, oy, d), RideField(w / 2f, my, d), RideField(w - ox, oy, d))
+        return lo to fields
     }
 
     /** Point at [angleDeg] on a circle of radius [r] around the dial centre. */
@@ -148,11 +184,11 @@ object RideRenderer {
         val canvas = Canvas(bmp)
         val t = model.theme
         canvas.drawColor(t.background)
-        val l = layout(width, height, model.statusLeft != null || model.statusRight != null)
+        val l = layout(width, height, model.statusLeft != null || model.statusRight != null, model.triangleFields)
         drawDial(canvas, l, model.position, model.scaleMin, model.scaleMax, t, model.ringZones)
         drawCentre(canvas, l, model, t)
-        model.statusLeft?.let { drawStatus(canvas, l, it, left = true, t) }
-        model.statusRight?.let { drawStatus(canvas, l, it, left = false, t) }
+        model.statusLeft?.let { drawStatus(canvas, l, it, left = true, t, model.statusLabels) }
+        model.statusRight?.let { drawStatus(canvas, l, it, left = false, t, model.statusLabels) }
         l.fields.zip(model.slots).forEach { (f, slot) ->
             if (f.line != null) drawLine(canvas, f.line, slot, t) else drawCircleField(canvas, f, slot, t)
         }
@@ -269,16 +305,16 @@ object RideRenderer {
     }
 
     /** One status spot: the battery block, or a value with its label under it. Left spots start at the dial's left edge, right spots end at its right edge. */
-    private fun drawStatus(c: Canvas, l: RideLayout, item: StatusItem, left: Boolean, t: RideTheme) {
+    private fun drawStatus(c: Canvas, l: RideLayout, item: StatusItem, left: Boolean, t: RideTheme, labels: StatusLabels) {
         when (item) {
             is StatusItem.Battery -> drawShiftBattery(c, l, item.battery, left, t)
-            is StatusItem.Value -> drawValue(c, l, item, left, t)
+            is StatusItem.Value -> if (labels == StatusLabels.UNDER) drawValue(c, l, item, left, t) else drawBigValue(c, l, item, left, t, labels)
         }
     }
 
     /** Where a status block of width [blockW] is centred. */
     private fun statusCentre(l: RideLayout, blockW: Float, left: Boolean) =
-        if (left) maxOf(l.padding, l.dialLeft) + blockW / 2f else l.dialRight - blockW / 2f
+        if (left) maxOf(l.padding, l.statusMinX) + blockW / 2f else l.statusMaxX - blockW / 2f
 
     /**
      * Battery block: icon filled to the shifting battery, and "Di2 70%" / "AXS FULL" under it (grey "SHIFT --"
@@ -290,7 +326,7 @@ object RideRenderer {
         val nub = h * 0.15f
         val name = "${b?.system ?: "SHIFT"} "
         val value = b?.text ?: "--"
-        val levelColor = b?.level?.color?.let { t.color(it) }
+        val levelColor = b?.level?.color?.let { t.levelColor(it) }
         val nameP = text(h * STATUS_TEXT, t.textSecondary, Paint.Align.LEFT)
         val valueP = text(h * STATUS_TEXT, levelColor ?: t.textSecondary, Paint.Align.LEFT)
         val maxTextW = l.radius * 0.95f
@@ -323,12 +359,67 @@ object RideRenderer {
     /** Value block, level with the battery: "52 / 14" with "GEAR" centred under it. */
     private fun drawValue(c: Canvas, l: RideLayout, item: StatusItem.Value, left: Boolean, t: RideTheme) {
         val h = l.statusIcon
-        val valueP = fit(text(h * 1.6f, if (item.known) t.text else t.textSecondary), item.text, l.radius * 0.8f)
+        val valueP = fit(text(h * 1.6f, valueColor(item, t)), item.text, l.radius * 0.8f)
         val labelP = fit(text(h * 1.15f, t.textSecondary), item.label, l.radius * 0.8f)
         val blockW = maxOf(valueP.measureText(item.text), labelP.measureText(item.label))
         val centre = statusCentre(l, blockW, left)
-        c.drawText(item.text, centre, l.statusTop + h * 1.25f, valueP)
-        c.drawText(item.label, centre, l.statusTop + h * 1.25f + h * 1.4f, labelP)
+        val base = l.statusTop + h * 1.25f
+        drawValueBlock(c, item, centre, base, valueP, t)
+        c.drawText(item.text, centre, base, valueP)
+        c.drawText(item.label, centre, base + h * 1.4f, labelP)
+    }
+
+    /**
+     * Big value over the whole status row height. Label beside it on the dial's side (left spot: value then label,
+     * right spot: label then value), or no label at all. The value sits on the outer edge.
+     */
+    private fun drawBigValue(c: Canvas, l: RideLayout, item: StatusItem.Value, left: Boolean, t: RideTheme, labels: StatusLabels) {
+        val h = l.statusIcon
+        val rowH = h * STATUS_ROW
+        val withLabel = labels == StatusLabels.BESIDE
+        val valueP = text(rowH * (if (withLabel) 0.78f else 0.9f), valueColor(item, t))
+        val labelP = text(h * 1.0f, t.textSecondary)
+        val gap = h * 0.45f
+        val pad = if (item.color != null) valueP.textSize * 0.18f else 0f
+        val maxW = (l.statusMaxX - l.statusMinX) / 2f * 0.95f
+        fun total() = valueP.measureText(item.text) + 2 * pad + if (withLabel) gap + labelP.measureText(item.label) else 0f
+        if (total() > maxW) { val k = maxW / total(); valueP.textSize *= k; labelP.textSize *= k }
+        val valueW = valueP.measureText(item.text) + 2 * pad
+        val labelW = if (withLabel) labelP.measureText(item.label) else 0f
+        // Value centre and label centre; the block hugs the dial's left or right edge.
+        val blockLeft = if (left) maxOf(l.padding, l.statusMinX) else l.statusMaxX - total()
+        val valueCx = if (left) blockLeft + valueW / 2f else blockLeft + total() - valueW / 2f
+        val labelCx = if (left) blockLeft + valueW + gap + labelW / 2f else blockLeft + labelW / 2f
+        val midY = l.statusTop + rowH / 2f
+        val base = midY + valueP.textSize * 0.36f
+        drawValueBlock(c, item, valueCx, base, valueP, t)
+        c.drawText(item.text, valueCx, base, valueP)
+        if (withLabel) c.drawText(item.label, labelCx, midY + labelP.textSize * 0.36f, labelP)
+    }
+
+    /** Text colour of a status value: grey when unknown, dark or white on a coloured block, else the normal text. */
+    private fun valueColor(item: StatusItem.Value, t: RideTheme): Int = when {
+        !item.known -> t.textSecondary
+        item.color != null -> onColor(t.color(item.color))
+        else -> t.text
+    }
+
+    /** Rounded block in the value's zone colour behind a status value (grade), when it has one. */
+    private fun drawValueBlock(c: Canvas, item: StatusItem.Value, cx: Float, base: Float, valueP: Paint, t: RideTheme) {
+        val col = item.color ?: return
+        if (!item.known) return
+        val size = valueP.textSize
+        val halfW = valueP.measureText(item.text) / 2f + size * 0.18f
+        val rect = RectF(cx - halfW, base - size * 0.86f, cx + halfW, base + size * 0.16f)
+        c.drawRoundRect(rect, size * 0.16f, size * 0.16f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = t.color(col) })
+    }
+
+    /** Black or white text, whichever reads better on [bg]. */
+    fun onColor(bg: Int): Int {
+        val r = (bg shr 16) and 0xFF
+        val g = (bg shr 8) and 0xFF
+        val b = bg and 0xFF
+        return if (0.299 * r + 0.587 * g + 0.114 * b > 150) 0xFF0B1020.toInt() else 0xFFFFFFFF.toInt()
     }
 
     private fun drawCircleField(c: Canvas, f: RideField, s: RideSlot, t: RideTheme) {
@@ -340,7 +431,7 @@ object RideRenderer {
         })
         c.drawText(s.label, f.cx, f.cy - d * 0.17f, fit(text(d * 0.13f, t.textSecondary), s.label, d * 0.58f))
         val v = s.value ?: "--"
-        val vp = fit(text(d * 0.33f, if (s.value != null) t.text else t.textSecondary), v, d * 0.72f)
+        val vp = fit(text(d * 0.38f, if (s.value != null) t.text else t.textSecondary), v, d * 0.76f)
         c.drawText(v, f.cx, f.cy + d * 0.10f + vp.textSize * 0.36f, vp)
     }
 
@@ -395,7 +486,7 @@ object RideRenderer {
             c.drawPath(path, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = t.needle })
         }
         val v = s.value ?: "--"
-        val vp = fit(text(d * 0.27f, if (s.value != null) t.text else t.textSecondary), v, d * 0.52f)
+        val vp = fit(text(d * 0.32f, if (s.value != null) t.text else t.textSecondary), v, d * 0.56f)
         c.drawText(v, f.cx, f.cy + vp.textSize * 0.36f, vp)
         c.drawText(s.label, f.cx, f.cy + r * 0.66f, fit(text(d * 0.11f, t.textSecondary), s.label, d * 0.5f))
     }
